@@ -34,6 +34,7 @@
 
 - 入口与交互：Gradio Web 应用（app.py）
 - 流程编排：LangGraph 状态图（src/graph.py）
+- 模型配置中心：统一模型调用与模型名配置（src/llm/model_config.py）
 - 检索体系：FAISS 向量检索 + BM25 关键词检索（src/node/retriever.py）
 - 查询处理：Router、Query Decompose、Rewrite 节点
 - 结果质量：Grade 节点、Rerank 节点
@@ -83,6 +84,11 @@
   - 构建目录解析组件测试
   - 反馈存储组件测试
 - 测试运行基线：使用 uv 执行测试命令
+
+### 4.6 模型调用治理（新增）
+
+- 已将 Chat LLM、Embedding、Rerank 的模型名与调用入口统一到 `src/llm/model_config.py`
+- 目标：后续更换模型时只需修改一个文件，降低多点改动风险
 
 ## 5. 运行基线（环境约定）
 

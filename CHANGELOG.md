@@ -15,6 +15,7 @@
 - 新增模块：src/build_utils.py（构建目录解析）
 - 新增多模态扩展计划（写入 SPEC）：支持基于 DocData URL 构造 Markdown 图片可访问链接
 - 新增协作治理约定：除助手改动外，用户改动也纳入定期 SPEC/CHANGELOG 回写与版本提交
+- 新增统一模型配置中心：src/llm/model_config.py（集中管理 LLM/Embedding/Rerank 模型名与调用）
 
 ### Planned
 
@@ -29,6 +30,10 @@
 - app.py 不再内嵌反馈 JSON 落盘逻辑，改为调用独立反馈存储模块
 - src/graph.py 不再内嵌路由判定实现，改为调用独立路由模块
 - 文档治理范围扩展为“代码 + 文档 + 用户本地改动”的统一变更日志管理
+- src/embedding/embedding.py 改为从模型配置中心获取 embedding 实例
+- src/node/rerank.py 改为从模型配置中心调用 rerank，移除重复模型名与 API Key 处理
+- src/llm/provider.py 改为兼容层，底层统一走模型配置中心
+- README 新增“模型统一配置”说明，明确一处改模型名
 
 ### Verified
 

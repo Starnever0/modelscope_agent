@@ -130,6 +130,19 @@ TAVILY_API_KEY=your_tavily_api_key
 
 项目启动时会自动加载 `.env`。
 
+## 模型统一配置
+
+项目已将 LLM、Embedding、Rerank 的模型名称统一到一个文件：
+
+- `src/llm/model_config.py`
+
+如需更换模型，仅需修改该文件中的 `MODEL_NAMES`：
+
+- `normal_chat`：路由/重写/打分等非流式调用
+- `stream_chat`：最终回答与闲聊流式输出
+- `embedding`：向量化模型
+- `rerank`：重排序模型
+
 ## 许可证
 
 Apache License 2.0

@@ -36,16 +36,9 @@ A: ① 训练数据量需求大（至少几万条标注数据）
 
 from typing import List, Dict
 from langchain_core.documents import Document
-from dashscope import TextReRank
-import os
+from src.llm.model_config import call_rerank, MODEL_NAMES
 from src.state.state import RagState
 from src.test import timing_decorator
-
-# ============ API 配置 ============
-# 从环境变量读取 API Key（安全推荐方式，避免硬编码）
-DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY")
-if not DASHSCOPE_API_KEY:
-    raise ValueError("请设置环境变量 DASHSCOPE_API_KEY")
 
 @timing_decorator
 def rerank_node(state: RagState) -> Dict:
@@ -98,7 +91,7 @@ def rerank_node(state: RagState) -> Dict:
         return {"ranked_docs": []}
 
     query = state["rewritten_query"]
-    print(f"🔄 调用 Qwen rerank API，对 {len(docs)} 条文档进行重排序...")
+    print(f"🔄 调用 {MODEL_NAMES['rerank']} rerank API，对 {len(docs)} 条文档进行重排序...")
 
     # 步骤2：提取文档内容为纯字符串列表
     # 注意：必须是 List[str]，不能是 List[Document]
@@ -106,12 +99,10 @@ def rerank_node(state: RagState) -> Dict:
 
     try:
         # 步骤3：调用 Qwen Rerank API
-        response = TextReRank.call(
-            model="qwen3-rerank",      # 模型选择：qwen3-rerank 是轻量级版本（快速）
-            query=query,               # 用户查询
-            documents=passages,        # 候选文档列表（纯字符串）
-            top_n=10,                  # 返回 Top-10（平衡质量和数量）
-            api_key=DASHSCOPE_API_KEY  # API 密钥
+        response = call_rerank(
+            query=query,
+            documents=passages,
+            top_n=10,
         )
 
         # 步骤4：检查 API 调用状态
