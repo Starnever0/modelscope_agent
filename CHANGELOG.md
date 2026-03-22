@@ -13,6 +13,13 @@
 - 新增模块：src/graph_routes.py（路由决策）
 - 新增模块：src/feedback/store.py（反馈持久化）
 - 新增模块：src/build_utils.py（构建目录解析）
+- 新增多模态扩展计划（写入 SPEC）：支持基于 DocData URL 构造 Markdown 图片可访问链接
+- 新增协作治理约定：除助手改动外，用户改动也纳入定期 SPEC/CHANGELOG 回写与版本提交
+
+### Planned
+
+- 多模态增强实施门禁：必须在首次“全链路跑通”完成后启动
+- Phase A/B/C 分阶段推进：图片元数据增强 -> 检索保留图片关联 -> 生成阶段按相关性引用图片
 
 ### Changed
 
@@ -21,6 +28,7 @@
 - 修复 build.py 目录组装逻辑，避免 LEARN_DIR 未定义导致 NameError
 - app.py 不再内嵌反馈 JSON 落盘逻辑，改为调用独立反馈存储模块
 - src/graph.py 不再内嵌路由判定实现，改为调用独立路由模块
+- 文档治理范围扩展为“代码 + 文档 + 用户本地改动”的统一变更日志管理
 
 ### Verified
 
