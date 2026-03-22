@@ -1,0 +1,16 @@
+langchain
+langchain-community
+langchain-core
+langchain-chroma
+chromadb
+dashscope>=1.14.0
+jieba
+rank_bm25
+gradio==5.49.1
+langgraph
+langchain_openai
+faiss_cpu
+python-dotenv
+requests
+beautifulsoup4
+markdownify
