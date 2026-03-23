@@ -6,6 +6,9 @@
 
 ### Added
 
+- 新增专用检索评测脚本：`scripts/run_retrieval_eval.py`（快速计算 Hit@k、Recall@k、MRR@k，跳过生成阶段）
+- 新增 80 个官方评测数据集：`data/eval/datasets/auto_questions_docid_80.jsonl`（LLM 生成、结构化解码、自动标注 docid）
+- 新增评测报告生成能力（仅检索指标、完整评测）
 - 新增 SPEC 文档：SPEC.md
 - 明确首轮目标为“跑通全链路（抓取数据 -> 构建索引 -> 启动服务 -> 完成一次 docs 问答）”
 - 建立问题挖掘与迭代更新机制（SPEC + CHANGELOG 联动）
@@ -23,7 +26,7 @@
 - 新增评测指引文档：`EVAL_LANGSMITH_GUIDE.md`
 - 新增评测单元测试：`tests/unit/eval/*.py`
 - 新增数据集转换脚本：`scripts/prepare_eval_dataset.py`（支持标准问答/反馈数据 CSV 转 JSONL）
-- 新增候选集生成脚本：`scripts/generate_eval_candidates.py`（随机文档生成 simple/medium/hard 问题并标记人工审核）
+- 新增候选集生成脚本：`scripts/generate_eval_candidates.py`（按文档主题分批调用 LLM 生成 simple/medium/hard 问题并标记人工审核）
 - 新增评测指标模块：`src/eval/answer_eval.py`（文本相似度）、`src/eval/feedback_eval.py`（用户评分与反馈覆盖率）
 
 ### Planned
@@ -56,6 +59,9 @@
 - 评测流程放宽为“docid 可选”：无 docid 数据集可跳过召回指标，继续执行速度/文本相似度/LLM-as-judge
 - 支持反馈数据集直接复用历史机器人回答（不强制重新生成）
 - LangSmith 上传样本字段扩展：支持 bot_answer、user_rating、user_feedback、dataset_type
+- `scripts/generate_eval_candidates.py` 调整为“仅生成问题，不生成参考答案”，并支持 `question-count/docs-per-prompt/max-questions-per-call` 控制规模与调用次数
+- `scripts/generate_eval_candidates.py` 新增 Pydantic 结构化解码与 JSON 清洗解析，降低 LLM 输出格式漂移导致的降级概率
+- 自动样本 metadata 新增 `generation_source`（`llm`/`fallback`），支持用微任务快速定位是否触发降级
 
 ### Verified
 
@@ -79,6 +85,7 @@
 - 修复 `normal_chat=qwen3.5-flash` 在当前账号下触发 `InvalidParameter(url error)` 导致主链路中断的问题
 - 解决 Embedding 欠费导致的索引构建阻塞，已恢复 `build.py` 构建产物
 - 修复 Gradio 启动后输出地址不可直接访问的问题（0.0.0.0 -> 127.0.0.1）
+- 修复自动问题生成中“弱问句高重复”与“LLM 输出不规范导致频繁 fallback”问题
 
 ### Known Issues
 

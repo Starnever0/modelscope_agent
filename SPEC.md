@@ -103,7 +103,10 @@
 - 已提供测试集构建与输入指引文档：`EVAL_LANGSMITH_GUIDE.md`
 - 已提供数据集辅助脚本：
   - `scripts/prepare_eval_dataset.py`（CSV/人工表格转换）
-  - `scripts/generate_eval_candidates.py`（随机文档自动生成候选 + 人工审核）
+  - `scripts/generate_eval_candidates.py`（按文档主题分批调用 LLM 生成仅问题候选，自动标注 docid + 人工审核；内置结构化解码与 fallback 观测）
+  - `scripts/run_retrieval_eval.py`（仅计算检索质量指标，跳过生成/judge 以加快评测）
+- 已生成官方评测数据集：`data/eval/datasets/auto_questions_docid_80.jsonl`（80 个 LLM 生成的含 docid 问答样本）
+- 完成初步检索质量评测：包含 Hit@k、Recall@k、MRR@k 三项指标
 
 ### 4.6 模型调用治理（新增）
 

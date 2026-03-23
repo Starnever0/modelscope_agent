@@ -15,7 +15,7 @@ from langchain_community.embeddings import DashScopeEmbeddings
 # }
 MODEL_NAMES = {
     # 当前账号下 qwen3.5-flash 会触发 InvalidParameter(url)，先使用可用模型保障主链路可运行
-    "normal_chat": "qwen-turbo",
+    "normal_chat": "glm-4.7",
     "stream_chat": "qwen3-max-2026-01-23",
     # 文本 RAG 默认模型（build.py 索引构建使用文本切片）
     "embedding_text": "text-embedding-v4",
