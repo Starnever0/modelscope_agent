@@ -36,7 +36,8 @@
 - src/llm/provider.py 改为兼容层，底层统一走模型配置中心
 - README 新增“模型统一配置”说明，明确一处改模型名
 - src/llm/model_config.py 新增文本/多模态模型分层配置，并支持 `RAG_EMBEDDING_MODEL` 与 `RAG_RERANK_MODEL` 覆盖
-- src/llm/model_config.py 增加多模态文本 embedding 适配器，使 VL embedding 模型可用于文本切片向量化
+- src/llm/model_config.py 调整为“文本向量化固定走 text-embedding，多模态模型仅用于图文向量化”
+- src/llm/model_config.py 将 `normal_chat` 切换为当前账号可用模型 `qwen-turbo`，`stream_chat` 保持 `qwen3-max-2026-01-23`
 
 ### Verified
 
@@ -44,10 +45,14 @@
 - uv run python --version 可用
 - uv run python app.py 可启动 Gradio 服务
 - uv run python -m pytest -q 通过（9 passed）
+- data/faiss_db 可加载，向量库条目数为 4408
+- 图流程 docs 问答端到端验证通过（可返回有效回答）
 
 ### Fixed
 
 - 将 `pytest` 加入 uv 开发依赖组，修复 uv 测试链路误命中全局 pytest 的问题
+- 修复 `normal_chat=qwen3.5-flash` 在当前账号下触发 `InvalidParameter(url error)` 导致主链路中断的问题
+- 解决 Embedding 欠费导致的索引构建阻塞，已恢复 `build.py` 构建产物
 
 ### Known Issues
 

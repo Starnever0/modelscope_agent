@@ -91,7 +91,8 @@
 - 已将 Chat LLM、Embedding、Rerank 的模型名与调用入口统一到 `src/llm/model_config.py`
 - 目标：后续更换模型时只需修改一个文件，降低多点改动风险
 - 已支持通过环境变量切换文本/多模态模型：`RAG_EMBEDDING_MODEL`、`RAG_RERANK_MODEL`
-- 当 embedding 模型配置为 VL/多模态模型时，自动走多模态 embedding 接口并适配文本输入
+- 文本向量化与多模态向量化已分离：文本构建固定使用 text-embedding，多模态模型仅用于图文场景
+- 已根据当前账号可用性将 normal_chat 调整为可用模型，避免路由/重写/评估节点因模型不可用中断
 
 ## 5. 运行基线（环境约定）
 
@@ -125,17 +126,16 @@
 ### 6.2 当前状态（2026-03-22）
 
 - 已确认 uv 运行链路可用
-- 已确认 app.py 可启动（Gradio 服务已拉起）
+- 已确认 app.py 可启动并可完成系统初始化
 - 已修复 build.py 中未定义目录变量导致的构建启动失败问题
-- 索引构建在 4603 个切片处理期间出现 DashScope `Arrearage` 错误，当前未产出 data/faiss_db
-- 由于缺少最新 FAISS 索引，docs 问答链路尚未完成端到端验证
+- 已完成索引构建并产出 `data/faiss_db`，向量库可正常加载（4408 条）
+- 已完成 docs 问答端到端验证：图流程可返回有效回答
 
-结论：首次“跑通整个项目”任务尚未完成。
+结论：首次“跑通整个项目”任务已完成。
 
 ### 6.3 当前主要阻塞
 
-- 阻塞项 B1：DashScope Embedding API 返回 `Arrearage`，向量化请求被拒绝
-- 阻塞影响：无法产出 data/faiss_db，检索链路不可用
+- 当前无阻塞项。
 
 ## 7. 问题挖掘与迭代机制
 
@@ -150,13 +150,17 @@
 
 ### B1（高优先级）Embedding API 欠费阻塞
 
-- 状态：Open
-- 现象：uv run python build.py 向量化阶段反复返回 `status_code: 400 / code: Arrearage`
-- 影响：无法生成 data/faiss_db，RAG 文档检索主路径不可用
-- 下一步：
-  - 确认 DashScope 账号可用额度与权限
-  - 恢复后重新执行索引构建并校验向量库产物
-  - 在完成后执行 app 端到端问答验收
+- 状态：Resolved
+- 现象：历史上 uv run python build.py 向量化阶段返回 `status_code: 400 / code: Arrearage`
+- 修复：充值并恢复可用额度后重新执行索引构建，成功产出 `data/faiss_db`
+- 结果：文档检索主路径恢复可用，完成端到端问答验收
+
+### F4（已修复）normal_chat 模型可用性导致主链路报 url error
+
+- 状态：Resolved
+- 现象：`qwen3.5-flash` 在当前账号侧调用返回 `InvalidParameter(url error)`，影响 Router/Decompose/Grade 等非流式节点
+- 修复：将 `normal_chat` 切换为当前可用模型 `qwen-turbo`
+- 结果：主图流程恢复稳定，可完成 docs 问答端到端调用
 
 ### F1（已修复）构建入口目录变量异常
 
