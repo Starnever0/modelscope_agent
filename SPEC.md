@@ -279,6 +279,8 @@ Phase C（生成增强）
 
 ## 10. 文档维护约定
 
+- 开发前必读文档：SPEC.md、README.md；涉及评测任务时需额外阅读 EVAL_LANGSMITH_GUIDE.md
+- 所有文档撰写优先使用中文；如需英文内容，建议作为补充而非主文
 - 每次改动必须同步更新 CHANGELOG.md
 - 影响运行状态的变更必须同步更新本 SPEC 的“当前状态”和“问题清单”
 - 问题状态使用：Open / In Progress / Resolved

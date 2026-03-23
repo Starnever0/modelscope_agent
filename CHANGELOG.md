@@ -48,6 +48,8 @@
 - app.py 的 Gradio 启动默认绑定地址由 `0.0.0.0` 调整为 `127.0.0.1`，并支持 `GRADIO_SERVER_NAME/GRADIO_SERVER_PORT/GRADIO_INBROWSER` 环境变量覆盖
 - app.py 移除 Chatbot 已弃用参数 `bubble_full_width`，消除启动告警
 - `pyproject.toml` 新增 `langsmith` 依赖，用于评测数据集与结果上传
+- EVAL 评测说明文档已切换为中文版本，统一测试集构建与输入指引口径
+- 开发流程新增“文档撰写优先中文”规范，并明确开发前必读文档清单（SPEC/README/评测任务附加 EVAL 指引）
 
 ### Verified
 
