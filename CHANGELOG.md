@@ -17,6 +17,11 @@
 - 新增协作治理约定：除助手改动外，用户改动也纳入定期 SPEC/CHANGELOG 回写与版本提交
 - 新增统一模型配置中心：src/llm/model_config.py（集中管理 LLM/Embedding/Rerank 模型名与调用）
 - 新增运行时模型观测日志：按调用场景打印真实模型名（intent/rewrite/decompose/grade/generate/embedding/rerank）
+- 新增 LangSmith 评测模块：`src/eval/`（dataset/docid/retrieval/latency/judge/langsmith_sync）
+- 新增评测执行脚本：`scripts/run_eval.py`
+- 新增评测测试集模板：`data/eval/datasets/sample_rag_eval.jsonl`
+- 新增评测指引文档：`EVAL_LANGSMITH_GUIDE.md`
+- 新增评测单元测试：`tests/unit/eval/*.py`
 
 ### Planned
 
@@ -42,6 +47,7 @@
 - src/llm/provider.py 与核心节点改为场景化获取 LLM，以输出可追踪的模型调用日志
 - app.py 的 Gradio 启动默认绑定地址由 `0.0.0.0` 调整为 `127.0.0.1`，并支持 `GRADIO_SERVER_NAME/GRADIO_SERVER_PORT/GRADIO_INBROWSER` 环境变量覆盖
 - app.py 移除 Chatbot 已弃用参数 `bubble_full_width`，消除启动告警
+- `pyproject.toml` 新增 `langsmith` 依赖，用于评测数据集与结果上传
 
 ### Verified
 
@@ -54,6 +60,8 @@
 - 在不重建向量库条件下完成简单测试：单次图流程问答成功，并额外完成 rerank API 调用（status=200）
 - 运行日志可见真实模型名打印：`embedding_text=text-embedding-v4`、`rerank=qwen3-rerank`、`intent_router/query_rewrite/query_decompose/doc_grade=qwen-turbo`、`answer_generate/chat_generate=qwen3-max-2026-01-23`
 - `uv run python app.py` 启动后可通过 `http://127.0.0.1:7860` 打开页面
+- `uv run python -m pytest tests/unit/eval -q` 通过（10 passed）
+- `uv run python -m pytest -q` 全量通过（19 passed）
 
 ### Fixed
 

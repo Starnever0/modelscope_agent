@@ -83,8 +83,19 @@
   - 路由决策组件测试
   - 构建目录解析组件测试
   - 反馈存储组件测试
+  - 评测模块测试（dataset/docid/retrieval/latency/judge）
 - 测试运行基线：使用 uv 执行测试命令
 - pytest 已纳入 uv 开发依赖组（dependency-groups.dev），避免误用全局环境
+
+### 4.7 评测体系（新增）
+
+- 已新增模块化评测能力（`src/eval/`）与执行入口（`scripts/run_eval.py`）
+- 指标固定为三类：
+  - 检索质量：`Hit@k`、`Recall@k`、`MRR@k`
+  - 响应速度：`TTFT`、`Total Latency`、`Chars/sec`
+  - LLM-as-judge：`relevance`、`groundedness`、`completeness`、`judge_score`
+- 已支持 LangSmith 数据集与评测结果上传（可选开关）
+- 已提供测试集构建与输入指引文档：`EVAL_LANGSMITH_GUIDE.md`
 
 ### 4.6 模型调用治理（新增）
 
@@ -108,6 +119,7 @@
 - 索引构建：uv run python build.py
 - 启动应用：uv run python app.py
 - 运行测试：uv run python -m pytest -q
+- 运行评测：uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10
 
 ### 5.3 必要配置
 
@@ -193,6 +205,13 @@
 - 现象：应用输出 `0.0.0.0:7860`，用户端直接打开失败
 - 修复：`app.py` 默认绑定改为 `127.0.0.1`，并支持 `GRADIO_SERVER_NAME/GRADIO_SERVER_PORT/GRADIO_INBROWSER` 环境变量覆盖
 - 结果：本地访问地址可直接打开，启动日志明确打印可访问 URL
+
+### F6（已完成）LangSmith 评测模块缺失
+
+- 状态：Resolved
+- 现象：缺少统一的检索/速度/LLM-as-judge 评测模块与测试集规范
+- 修复：新增 `src/eval/` 模块、`scripts/run_eval.py`、`tests/unit/eval/`，并补充 `EVAL_LANGSMITH_GUIDE.md`
+- 结果：评测模块单测通过并可按固定指标运行，支持可选上传 LangSmith
 
 ### M1（规划中）文档图片多模态增强
 

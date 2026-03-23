@@ -25,6 +25,7 @@ dependencies = [
     "requests",
     "beautifulsoup4",
     "markdownify",
+    "langsmith",
 ]
 
 [tool.uv]

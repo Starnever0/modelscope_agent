@@ -157,6 +157,48 @@ TAVILY_API_KEY=your_tavily_api_key
 - `embedding_text`：文本向量化模型
 - `rerank`：重排序模型
 
+## LangSmith 评测
+
+项目新增了模块化评测能力，覆盖三类核心指标：
+
+- 检索质量：`Hit@k`、`Recall@k`、`MRR@k`
+- 响应速度：`TTFT`、`Total Latency`、`Chars/sec`
+- LLM-as-judge：`relevance`、`groundedness`、`completeness`
+
+### 测试集路径与格式
+
+- 测试集目录：`data/eval/datasets/`
+- 示例文件：`data/eval/datasets/sample_rag_eval.jsonl`
+- 报告输出：`data/eval/reports/`
+
+每行一个 JSON 样本，必填字段：
+
+1. `case_id`
+2. `query`
+3. `expected_docids`（非空列表）
+4. `difficulty`（`easy|medium|hard`）
+
+### 运行评测
+
+```bash
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10
+```
+
+### 上传 LangSmith
+
+```bash
+LANGCHAIN_API_KEY=your_key
+LANGCHAIN_TRACING_V2=true
+LANGCHAIN_PROJECT=modelscope-rag-eval
+
+uv run python scripts/run_eval.py \
+	--dataset data/eval/datasets/sample_rag_eval.jsonl \
+	--upload-langsmith \
+	--dataset-name modelscope_rag_eval
+```
+
+更完整的数据集构建与 docid 标注说明见：`EVAL_LANGSMITH_GUIDE.md`
+
 ## 许可证
 
 Apache License 2.0
