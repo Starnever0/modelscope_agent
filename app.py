@@ -1,6 +1,7 @@
 import gradio as gr
 import uuid
 import logging
+import os
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessageChunk
 
@@ -297,7 +298,6 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
             elem_classes="chatbot-area",
             show_label=False,
             avatar_images=("./assets/用户.svg", "./assets/机器人.svg"),
-            bubble_full_width=False,
             show_copy_button=True,
             sanitize_html=False,
             type="messages"
@@ -400,4 +400,8 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
 
 if __name__ == "__main__":
     demo.queue(max_size=20)
-    demo.launch(server_name="0.0.0.0", server_port=7860)
+    server_name = os.getenv("GRADIO_SERVER_NAME", "127.0.0.1")
+    server_port = int(os.getenv("GRADIO_SERVER_PORT", "7860"))
+    inbrowser = os.getenv("GRADIO_INBROWSER", "1").lower() not in {"0", "false", "no"}
+    print(f"🌐 Gradio URL: http://{server_name}:{server_port}")
+    demo.launch(server_name=server_name, server_port=server_port, inbrowser=inbrowser)

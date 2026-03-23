@@ -40,6 +40,8 @@
 - src/llm/model_config.py 调整为“文本向量化固定走 text-embedding，多模态模型仅用于图文向量化”
 - src/llm/model_config.py 将 `normal_chat` 切换为当前账号可用模型 `qwen-turbo`，`stream_chat` 保持 `qwen3-max-2026-01-23`
 - src/llm/provider.py 与核心节点改为场景化获取 LLM，以输出可追踪的模型调用日志
+- app.py 的 Gradio 启动默认绑定地址由 `0.0.0.0` 调整为 `127.0.0.1`，并支持 `GRADIO_SERVER_NAME/GRADIO_SERVER_PORT/GRADIO_INBROWSER` 环境变量覆盖
+- app.py 移除 Chatbot 已弃用参数 `bubble_full_width`，消除启动告警
 
 ### Verified
 
@@ -51,12 +53,14 @@
 - 图流程 docs 问答端到端验证通过（可返回有效回答）
 - 在不重建向量库条件下完成简单测试：单次图流程问答成功，并额外完成 rerank API 调用（status=200）
 - 运行日志可见真实模型名打印：`embedding_text=text-embedding-v4`、`rerank=qwen3-rerank`、`intent_router/query_rewrite/query_decompose/doc_grade=qwen-turbo`、`answer_generate/chat_generate=qwen3-max-2026-01-23`
+- `uv run python app.py` 启动后可通过 `http://127.0.0.1:7860` 打开页面
 
 ### Fixed
 
 - 将 `pytest` 加入 uv 开发依赖组，修复 uv 测试链路误命中全局 pytest 的问题
 - 修复 `normal_chat=qwen3.5-flash` 在当前账号下触发 `InvalidParameter(url error)` 导致主链路中断的问题
 - 解决 Embedding 欠费导致的索引构建阻塞，已恢复 `build.py` 构建产物
+- 修复 Gradio 启动后输出地址不可直接访问的问题（0.0.0.0 -> 127.0.0.1）
 
 ### Known Issues
 
