@@ -94,8 +94,16 @@
   - 检索质量：`Hit@k`、`Recall@k`、`MRR@k`
   - 响应速度：`TTFT`、`Total Latency`、`Chars/sec`
   - LLM-as-judge：`relevance`、`groundedness`、`completeness`、`judge_score`
+- 已新增文本相似度评估（标准答案可用时）：`text_similarity`
+- 已支持多数据集形态：
+  - 含 docid 的标准 QA 集（完整检索评测）
+  - 不含 docid 的标准 QA 集（跳过检索评测，保留速度/相似度/judge）
+  - 反馈数据集（问题+机器人回答+用户评分+用户反馈）
 - 已支持 LangSmith 数据集与评测结果上传（可选开关）
 - 已提供测试集构建与输入指引文档：`EVAL_LANGSMITH_GUIDE.md`
+- 已提供数据集辅助脚本：
+  - `scripts/prepare_eval_dataset.py`（CSV/人工表格转换）
+  - `scripts/generate_eval_candidates.py`（随机文档自动生成候选 + 人工审核）
 
 ### 4.6 模型调用治理（新增）
 
@@ -211,7 +219,8 @@
 - 状态：Resolved
 - 现象：缺少统一的检索/速度/LLM-as-judge 评测模块与测试集规范
 - 修复：新增 `src/eval/` 模块、`scripts/run_eval.py`、`tests/unit/eval/`，并补充 `EVAL_LANGSMITH_GUIDE.md`
-- 结果：评测模块单测通过并可按固定指标运行，支持可选上传 LangSmith
+- 增强：支持无 docid 数据集、反馈数据集、文本相似度评估，以及候选数据自动生成+人工审核流程
+- 结果：评测流程不再强依赖 docid，支持多形态数据集并可选上传 LangSmith
 
 ### M1（规划中）文档图片多模态增强
 

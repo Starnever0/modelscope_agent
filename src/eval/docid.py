@@ -1,3 +1,7 @@
+"""
+Document ID 的生成逻辑 - 基于 source_url、chunk_index 和 content 的哈希值构建唯一 docid
+用于评估阶段的文档追踪和对齐，确保即使文档内容发生微小变化也能生成不同的 docid，从而反映出内容的差异。
+"""
 import hashlib
 from typing import Any
 

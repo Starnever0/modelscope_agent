@@ -22,6 +22,9 @@
 - 新增评测测试集模板：`data/eval/datasets/sample_rag_eval.jsonl`
 - 新增评测指引文档：`EVAL_LANGSMITH_GUIDE.md`
 - 新增评测单元测试：`tests/unit/eval/*.py`
+- 新增数据集转换脚本：`scripts/prepare_eval_dataset.py`（支持标准问答/反馈数据 CSV 转 JSONL）
+- 新增候选集生成脚本：`scripts/generate_eval_candidates.py`（随机文档生成 simple/medium/hard 问题并标记人工审核）
+- 新增评测指标模块：`src/eval/answer_eval.py`（文本相似度）、`src/eval/feedback_eval.py`（用户评分与反馈覆盖率）
 
 ### Planned
 
@@ -50,6 +53,9 @@
 - `pyproject.toml` 新增 `langsmith` 依赖，用于评测数据集与结果上传
 - EVAL 评测说明文档已切换为中文版本，统一测试集构建与输入指引口径
 - 开发流程新增“文档撰写优先中文”规范，并明确开发前必读文档清单（SPEC/README/评测任务附加 EVAL 指引）
+- 评测流程放宽为“docid 可选”：无 docid 数据集可跳过召回指标，继续执行速度/文本相似度/LLM-as-judge
+- 支持反馈数据集直接复用历史机器人回答（不强制重新生成）
+- LangSmith 上传样本字段扩展：支持 bot_answer、user_rating、user_feedback、dataset_type
 
 ### Verified
 
@@ -64,6 +70,8 @@
 - `uv run python app.py` 启动后可通过 `http://127.0.0.1:7860` 打开页面
 - `uv run python -m pytest tests/unit/eval -q` 通过（10 passed）
 - `uv run python -m pytest -q` 全量通过（19 passed）
+- `uv run python -m pytest tests/unit/eval -q` 再次通过（16 passed）
+- `uv run python -m pytest -q` 全量再次通过（25 passed）
 
 ### Fixed
 

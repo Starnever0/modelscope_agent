@@ -1,4 +1,4 @@
-from typing import Optional
+"""LangSmith 数据集与结果同步工具。"""
 
 from src.eval.types import EvalCase, EvalResult
 
@@ -27,8 +27,26 @@ def upload_cases_to_langsmith(dataset_name: str, cases: list[EvalCase], client=N
     cli = client or Client()
     dataset_id = get_or_create_dataset_id(dataset_name=dataset_name, client=cli)
 
-    inputs = [{"query": c.query, "case_id": c.case_id, "tags": c.tags, "difficulty": c.difficulty} for c in cases]
-    outputs = [{"expected_docids": c.expected_docids, "reference_answer": c.reference_answer} for c in cases]
+    inputs = [
+        {
+            "query": c.query,
+            "case_id": c.case_id,
+            "tags": c.tags,
+            "difficulty": c.difficulty,
+            "dataset_type": c.dataset_type,
+        }
+        for c in cases
+    ]
+    outputs = [
+        {
+            "expected_docids": c.expected_docids,
+            "reference_answer": c.reference_answer,
+            "bot_answer": c.bot_answer,
+            "user_rating": c.user_rating,
+            "user_feedback": c.user_feedback,
+        }
+        for c in cases
+    ]
     metadata = [c.metadata for c in cases]
 
     cli.create_examples(inputs=inputs, outputs=outputs, metadata=metadata, dataset_id=dataset_id)

@@ -25,3 +25,18 @@ def test_evaluate_retrieval_aggregate():
     assert result.summary["hit_at_k"] == 0.5
     assert result.summary["recall_at_k"] == 0.5
     assert len(result.items) == 2
+
+
+def test_evaluate_retrieval_skips_case_without_docids():
+    cases = [
+        EvalCase(case_id="c1", query="q1", expected_docids=[], difficulty="easy"),
+        EvalCase(case_id="c2", query="q2", expected_docids=["d2"], difficulty="easy"),
+    ]
+
+    def mock_retrieve(_query: str, _k: int):
+        return ["d2"]
+
+    result = evaluate_retrieval(cases, mock_retrieve, k=2)
+    assert result.summary["evaluated_count"] == 1.0
+    assert result.summary["skipped_count"] == 1.0
+    assert result.items[0].extra["skipped"] is True

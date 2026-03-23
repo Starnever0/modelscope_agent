@@ -30,14 +30,31 @@ def evaluate_retrieval(
     k: int = 10,
 ) -> EvalResult:
     items: List[EvalItemResult] = []
+    evaluated_count = 0
 
     for case in cases:
+        # 无 expected_docids 的样本不参与召回评估（可继续用于延迟与生成质量评估）
+        if not case.expected_docids:
+            items.append(
+                EvalItemResult(
+                    case_id=case.case_id,
+                    metrics={
+                        "hit_at_k": 0.0,
+                        "recall_at_k": 0.0,
+                        "mrr_at_k": 0.0,
+                    },
+                    extra={"skipped": True, "reason": "missing_expected_docids"},
+                )
+            )
+            continue
+
         predicted = retrieve_docids_fn(case.query, k)
         metrics = {
             "hit_at_k": hit_at_k(case.expected_docids, predicted, k),
             "recall_at_k": recall_at_k(case.expected_docids, predicted, k),
             "mrr_at_k": mrr_at_k(case.expected_docids, predicted, k),
         }
+        evaluated_count += 1
         items.append(
             EvalItemResult(
                 case_id=case.case_id,
@@ -46,10 +63,12 @@ def evaluate_retrieval(
             )
         )
 
-    count = max(len(items), 1)
+    count = max(evaluated_count, 1)
     summary = {
-        "hit_at_k": sum(i.metrics["hit_at_k"] for i in items) / count,
-        "recall_at_k": sum(i.metrics["recall_at_k"] for i in items) / count,
-        "mrr_at_k": sum(i.metrics["mrr_at_k"] for i in items) / count,
+        "hit_at_k": round(sum(i.metrics["hit_at_k"] for i in items if not i.extra.get("skipped")) / count, 6),
+        "recall_at_k": round(sum(i.metrics["recall_at_k"] for i in items if not i.extra.get("skipped")) / count, 6),
+        "mrr_at_k": round(sum(i.metrics["mrr_at_k"] for i in items if not i.extra.get("skipped")) / count, 6),
+        "evaluated_count": float(evaluated_count),
+        "skipped_count": float(len(items) - evaluated_count),
     }
     return EvalResult(items=items, summary=summary)

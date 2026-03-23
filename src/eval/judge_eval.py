@@ -1,3 +1,13 @@
+"""
+基于LLM的评判函数实现，适用于RAG等生成式任务的评测。
+核心功能：
+1. build_llm_judge：构建一个评判函数，使用LLM对生成的答案进行评估，输出相关性、可靠性、完整性等维度的评分。
+2. evaluate_judge：对一组评测案例进行评判，汇总每个案例的评分结果，并计算整体的平均分。
+设计要点：
+- 评判维度：相关性（relevance）、可靠性（groundedness）、完整性（completeness），每个维度评分范围为0.0-1.0。
+- 输入输出格式：评判函数接受查询、生成的答案和参考答案（可选），返回一个包含评分和理由的字典。
+- 异常处理：对于LLM返回的非JSON格式或缺失字段的情况，提供默认评分和错误理由，确保评测流程的鲁棒性。
+"""
 import json
 from typing import Callable, Dict, List, Optional
 
