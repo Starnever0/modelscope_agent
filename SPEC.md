@@ -105,8 +105,10 @@
   - `scripts/prepare_eval_dataset.py`（CSV/人工表格转换）
   - `scripts/generate_eval_candidates.py`（按文档主题分批调用 LLM 生成仅问题候选，自动标注 docid + 人工审核；内置结构化解码与 fallback 观测）
   - `scripts/run_retrieval_eval.py`（仅计算检索质量指标，跳过生成/judge 以加快评测）
+  - `scripts/generate_eval_realistic_qa.py`（按真实用户长尾风格生成问答样本，包含 `reference_answer`、`expected_docids`、`generation_source`）
 - 已生成官方评测数据集：`data/eval/datasets/auto_questions_docid_80.jsonl`（80 个 LLM 生成的含 docid 问答样本）
 - 完成初步检索质量评测：包含 Hit@k、Recall@k、MRR@k 三项指标
+- 已完成真实用户风格生成链路验证：小样本探针可实现 `fallback=0`，支持后续批量生成（如 100 条）
 
 ### 4.6 模型调用治理（新增）
 

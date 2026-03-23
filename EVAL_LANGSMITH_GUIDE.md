@@ -148,19 +148,64 @@ uv run python scripts/prepare_eval_dataset.py --mode qa --input your_qa.csv --ou
 用途：
 
 1. 从 FAISS 向量库随机抽取一个或多个文档
-2. 自动生成 simple/medium/hard 问题和参考答案
-3. 自动写入 source_docid 与 review_status=pending，供人工审核
+2. 分批将文档主题列表提供给 LLM，生成 simple/medium/hard 的自然问题
+3. 仅生成问题，不生成参考答案（减少模型调用成本）
+4. 自动写入 source_docids 与 review_status=pending，供人工审核
+5. 每条样本 metadata 增加 `generation_source`：`llm` 或 `fallback`，用于排查生成质量
 
 命令示例：
 
-uv run python scripts/generate_eval_candidates.py --faiss-dir data/faiss_db --sample-size 20 --output data/eval/datasets/auto_candidates.jsonl
+uv run python -m scripts.generate_eval_candidates --faiss-dir data/faiss_db --question-count 60 --docs-per-prompt 6 --max-questions-per-call 20 --output data/eval/datasets/auto_candidates.jsonl
+
+微任务探针（1条样本，用于排查是否触发 fallback）：
+
+uv run python -m scripts.generate_eval_candidates --faiss-dir data/faiss_db --question-count 1 --docs-per-prompt 6 --max-questions-per-call 1 --output data/eval/datasets/auto_probe_1.jsonl
+
+判定方法：
+
+1. 查看 `metadata.generation_source`
+2. 若为 `llm`，说明本次 LLM 输出可被正常解码
+3. 若为 `fallback`，说明本批次触发降级（需排查网络、模型输出格式或配额）
 
 人工审核建议流程：
 
 1. 打开 auto_candidates.jsonl
-2. 删除不合理样本，修正问题与答案
+2. 删除不合理样本，修正问题与 expected_docids
 3. 将 metadata.review_status 从 pending 改为 approved
 4. 另存为正式评测集（例如 qa_eval_v2.jsonl）
+
+## 4.3 生成“真实用户风格”问答评测集（含参考答案）
+
+脚本：`scripts/generate_eval_realistic_qa.py`
+
+适用场景：
+
+1. 需要评测真实用户提问理解与检索，不希望测试集过于工程化。
+2. 需要样本同时包含 `reference_answer`，用于文本相似度与 Judge 评估。
+
+核心特性：
+
+1. 问题风格按真实用户长尾分布生成（功能探索/入门理解/对比选择/任务导向/深度技术）。
+2. 难度分布按 RAG 检索难度控制（easy/medium/hard 约 50/30/20）。
+3. 每条样本包含：`query` + `reference_answer` + `expected_docids`。
+4. 仍提供 `metadata.generation_source`（`llm`/`fallback`）用于质量排查。
+
+命令示例（生成 100 条）：
+
+uv run python -m scripts.generate_eval_realistic_qa --faiss-dir data/faiss_db --question-count 100 --docs-per-prompt 8 --max-questions-per-call 20 --output data/eval/datasets/auto_realistic_qa_100.jsonl
+
+探针示例（先小样本验证是否触发 fallback）：
+
+uv run python -m scripts.generate_eval_realistic_qa --faiss-dir data/faiss_db --question-count 12 --docs-per-prompt 8 --max-questions-per-call 6 --output data/eval/datasets/auto_realistic_qa_probe_12.jsonl
+
+判定方法：
+
+1. 统计 `metadata.generation_source == "fallback"` 的条数。
+2. 建议门禁：`fallback_rows = 0` 再执行大批量生成。
+
+示例统计命令：
+
+uv run python -c "import json; p='data/eval/datasets/auto_realistic_qa_probe_12.jsonl'; rows=[json.loads(x) for x in open(p,'r',encoding='utf-8') if x.strip()]; fb=sum(1 for r in rows if r.get('metadata',{}).get('generation_source')=='fallback'); print('rows=',len(rows),'fallback_rows=',fb)"
 
 ## 5. 本地运行评测
 

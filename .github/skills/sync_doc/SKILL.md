@@ -51,6 +51,20 @@ description: "Use when: 需要把助手改动和用户改动一起同步到 SPEC
 
 要求：每条都可映射到具体改动或行为变化。
 
+### 3.1) Sync Related Docs（新增）
+
+当改动涉及特定模块或子系统时，除 SPEC/CHANGELOG 外还需同步相关文档：
+
+1. 模块级 README（例如 `src/**/README.md`、`crawl/README.md`）。
+2. 领域指引文档（例如评测改动对应 `EVAL_LANGSMITH_GUIDE.md`）。
+3. 新增脚本的使用说明文档（命令、输入输出、验证方式）。
+
+执行规则：
+
+1. 先通过 `git diff --name-only` 识别改动模块。
+2. 若模块存在 README/指南文档，需同步更新或明确说明“无须更新”的理由。
+3. 提交说明需包含“本次同步了哪些相关文档”。
+
 ### 4) Pre-commit Check
 
 1. 排除敏感信息（如 .env、密钥、私有数据）。
@@ -76,7 +90,8 @@ description: "Use when: 需要把助手改动和用户改动一起同步到 SPEC
 
 1. 是否触发本 skill（以及触发理由）。
 2. 已同步的 SPEC/CHANGELOG 要点。
-3. commit hash、提交信息、验证结果。
+3. 已同步的相关文档清单（如模块 README、领域指南）。
+4. commit hash、提交信息、验证结果。
 
 ## Boundaries
 
