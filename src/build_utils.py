@@ -1,3 +1,7 @@
+"""
+src.build_utils 的 Docstring
+包含构建过程中使用的实用函数，例如 resolve_target_dirs，用于确定目标目录列表。
+"""
 from typing import Optional
 
 

@@ -26,6 +26,7 @@
 
 - 运行环境基线统一为 uv
 - 验证命令统一为 uv run python <script>
+- 测试命令口径统一为 `uv run python -m pytest -q`，确保使用项目 `.venv` 的解释器与依赖
 - 修复 build.py 目录组装逻辑，避免 LEARN_DIR 未定义导致 NameError
 - app.py 不再内嵌反馈 JSON 落盘逻辑，改为调用独立反馈存储模块
 - src/graph.py 不再内嵌路由判定实现，改为调用独立路由模块
@@ -34,12 +35,19 @@
 - src/node/rerank.py 改为从模型配置中心调用 rerank，移除重复模型名与 API Key 处理
 - src/llm/provider.py 改为兼容层，底层统一走模型配置中心
 - README 新增“模型统一配置”说明，明确一处改模型名
+- src/llm/model_config.py 新增文本/多模态模型分层配置，并支持 `RAG_EMBEDDING_MODEL` 与 `RAG_RERANK_MODEL` 覆盖
+- src/llm/model_config.py 增加多模态文本 embedding 适配器，使 VL embedding 模型可用于文本切片向量化
 
 ### Verified
 
 - uv --version 可用
 - uv run python --version 可用
 - uv run python app.py 可启动 Gradio 服务
+- uv run python -m pytest -q 通过（9 passed）
+
+### Fixed
+
+- 将 `pytest` 加入 uv 开发依赖组，修复 uv 测试链路误命中全局 pytest 的问题
 
 ### Known Issues
 

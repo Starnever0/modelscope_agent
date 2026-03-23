@@ -1,3 +1,7 @@
+"""
+tests.unit.test_build_utils 的 Docstring
+确保 resolve_target_dirs 函数在不同输入情况下正确返回目标目录列表
+""" 
 from src.build_utils import resolve_target_dirs
 
 

@@ -84,11 +84,14 @@
   - 构建目录解析组件测试
   - 反馈存储组件测试
 - 测试运行基线：使用 uv 执行测试命令
+- pytest 已纳入 uv 开发依赖组（dependency-groups.dev），避免误用全局环境
 
 ### 4.6 模型调用治理（新增）
 
 - 已将 Chat LLM、Embedding、Rerank 的模型名与调用入口统一到 `src/llm/model_config.py`
 - 目标：后续更换模型时只需修改一个文件，降低多点改动风险
+- 已支持通过环境变量切换文本/多模态模型：`RAG_EMBEDDING_MODEL`、`RAG_RERANK_MODEL`
+- 当 embedding 模型配置为 VL/多模态模型时，自动走多模态 embedding 接口并适配文本输入
 
 ## 5. 运行基线（环境约定）
 
@@ -102,6 +105,7 @@
 - 数据抓取：uv run python crawl.py
 - 索引构建：uv run python build.py
 - 启动应用：uv run python app.py
+- 运行测试：uv run python -m pytest -q
 
 ### 5.3 必要配置
 
@@ -169,6 +173,13 @@
   - 抽离反馈持久化模块（feedback.store）并补充独立单测
   - 抽离构建目录解析模块（build_utils）并补充独立单测
 - 结果：核心组件可独立验证，降低入口文件耦合度，形成 TDD 可持续迭代基础
+
+### F3（已修复）uv 测试环境与执行口径不一致
+
+- 状态：Resolved
+- 现象：直接执行 `uv run pytest -q` 时可能命中全局 pytest，导致依赖解析偏离项目 `.venv`
+- 修复：将 `pytest` 加入 uv 开发依赖组，并统一测试命令为 `uv run python -m pytest -q`
+- 结果：在 uv 管理环境中全量单测通过（9 passed）
 
 ### M1（规划中）文档图片多模态增强
 

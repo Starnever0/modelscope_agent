@@ -36,7 +36,7 @@ A: ① 训练数据量需求大（至少几万条标注数据）
 
 from typing import List, Dict
 from langchain_core.documents import Document
-from src.llm.model_config import call_rerank, MODEL_NAMES
+from src.llm.model_config import call_rerank, get_active_rerank_model_name
 from src.state.state import RagState
 from src.test import timing_decorator
 
@@ -91,7 +91,7 @@ def rerank_node(state: RagState) -> Dict:
         return {"ranked_docs": []}
 
     query = state["rewritten_query"]
-    print(f"🔄 调用 {MODEL_NAMES['rerank']} rerank API，对 {len(docs)} 条文档进行重排序...")
+    print(f"🔄 调用 {get_active_rerank_model_name()} rerank API，对 {len(docs)} 条文档进行重排序...")
 
     # 步骤2：提取文档内容为纯字符串列表
     # 注意：必须是 List[str]，不能是 List[Document]
