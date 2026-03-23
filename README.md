@@ -140,7 +140,21 @@ TAVILY_API_KEY=your_tavily_api_key
 
 - `normal_chat`：路由/重写/打分等非流式调用
 - `stream_chat`：最终回答与闲聊流式输出
-- `embedding`：向量化模型
+- `embedding_text`：文本向量化模型（build.py 与文本检索）
+- `rerank_text`：文本重排序模型
+- `embedding_multimodal`：多模态向量化预留模型
+- `rerank_multimodal`：多模态重排序预留模型
+
+### 运行时模型打印
+
+每次运行会在控制台打印真实调用的模型名称（不是配置项 key），便于排查链路问题。当前包含：
+
+- `intent_router`：意图识别模型
+- `query_rewrite`：重写模型
+- `query_decompose`：查询分解模型
+- `doc_grade`：文档打分模型
+- `answer_generate` / `chat_generate`：生成模型
+- `embedding_text`：文本向量化模型
 - `rerank`：重排序模型
 
 ## 许可证

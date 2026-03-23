@@ -40,7 +40,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel, Field
 
-from src.llm.provider import get_normal_llm
+from src.llm.provider import get_normal_llm_for_scene
 from src.prompt.router_prompt import router_system_prompt
 from src.test import timing_decorator
 
@@ -89,7 +89,7 @@ route_prompt = ChatPromptTemplate.from_messages([
 ]).partial(format_instructions=parser.get_format_instructions())  # 注入输出格式要求
 
 # 获取 LLM 实例（通常是 Qwen 系列模型）
-llm = get_normal_llm() # Qwen-flash
+llm = get_normal_llm_for_scene("intent_router")
 
 # 构建 LangChain 链：提示词 → LLM → 解析器
 # 面试要点：这是 LangChain 的 LCEL（LangChain Expression Language）语法

@@ -2,7 +2,7 @@ from typing import List
 from pydantic import BaseModel, Field
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
-from src.llm.provider import get_normal_llm
+from src.llm.provider import get_normal_llm_for_scene
 from src.prompt.decompose_prompt import decompose_system_prompt
 from src.state.state import RagState
 from src.test import timing_decorator
@@ -22,7 +22,7 @@ decompose_prompt = ChatPromptTemplate.from_messages([
     ("human", "{query}")
 ]).partial(format_instructions=parser.get_format_instructions())
 
-llm = get_normal_llm() # Qwen-flash
+llm = get_normal_llm_for_scene("query_decompose")
 decompose_chain = decompose_prompt | llm | parser
 
 @timing_decorator

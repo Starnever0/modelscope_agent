@@ -12,7 +12,7 @@ generator_prompt = ChatPromptTemplate.from_messages([("system", generator_system
     ("human", "{question}"),
 ])
 
-generate_chain = generator_prompt | get_llm()
+generate_chain = generator_prompt | get_llm("answer_generate")
 
 @timing_decorator
 def generate_node(state: RagState):
@@ -56,7 +56,7 @@ chat_prompt = ChatPromptTemplate.from_messages([
     MessagesPlaceholder("messages"),
     ("human", "{question}"),
 ])
-chat_chain = chat_prompt | get_llm()
+chat_chain = chat_prompt | get_llm("chat_generate")
 def chat_node(state: RagState):
     print("🤔 进入chat节点...")
     res = chat_chain.invoke({

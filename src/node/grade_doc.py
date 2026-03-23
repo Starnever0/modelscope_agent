@@ -4,7 +4,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
-from src.llm.provider import get_normal_llm
+from src.llm.provider import get_normal_llm_for_scene
 from src.prompt.grade_doc_prompt import grade_doc_system_prompt
 from src.test import timing_decorator
 
@@ -23,7 +23,7 @@ grade_system_prompt = ChatPromptTemplate.from_messages([
     ("user", "【用户查询】：{query} \n\n【检索文档】：{documents}")
 ]).partial(format_instructions=parser.get_format_instructions())
 
-grade_chain = grade_system_prompt | get_normal_llm() | parser
+grade_chain = grade_system_prompt | get_normal_llm_for_scene("doc_grade") | parser
 
 @timing_decorator
 def grade_node(state):

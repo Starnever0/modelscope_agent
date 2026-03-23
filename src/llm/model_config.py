@@ -25,24 +25,40 @@ MODEL_NAMES = {
     "rerank_multimodal": "qwen3-vl-rerank",
 }
 
-def get_normal_llm():
-    return ChatTongyi(
+_PRINTED_MODEL_USAGE = set()
+
+
+def _print_model_usage(scene: str, model_name: str):
+    key = (scene, model_name)
+    if key in _PRINTED_MODEL_USAGE:
+        return
+    print(f"🧭 [Model] {scene}: {model_name}")
+    _PRINTED_MODEL_USAGE.add(key)
+
+
+def get_normal_llm(scene: str = "normal_chat"):
+    llm = ChatTongyi(
         model=MODEL_NAMES["normal_chat"],
         extra_body={"enable_thinking": False},
         temperature=0,
     )
+    _print_model_usage(scene, getattr(llm, "model_name", MODEL_NAMES["normal_chat"]))
+    return llm
 
 
-def get_stream_llm():
-    return ChatTongyi(
+def get_stream_llm(scene: str = "stream_chat"):
+    llm = ChatTongyi(
         model=MODEL_NAMES["stream_chat"],
         streaming=True,
     )
+    _print_model_usage(scene, getattr(llm, "model_name", MODEL_NAMES["stream_chat"]))
+    return llm
 
 
 def get_embedding_model():
     # 文本向量化固定使用 text embedding 模型。
     model_name = get_active_embedding_model_name()
+    _print_model_usage("embedding_text", model_name)
 
     return DashScopeEmbeddings(
         model=model_name,
@@ -72,8 +88,11 @@ def call_rerank(query: str, documents: List[str], top_n: int = 10):
     if not api_key:
         raise ValueError("请设置环境变量 DASHSCOPE_API_KEY")
 
+    model_name = get_active_rerank_model_name()
+    _print_model_usage("rerank", model_name)
+
     return TextReRank.call(
-        model=get_active_rerank_model_name(),
+        model=model_name,
         query=query,
         documents=documents,
         top_n=top_n,

@@ -16,6 +16,7 @@
 - 新增多模态扩展计划（写入 SPEC）：支持基于 DocData URL 构造 Markdown 图片可访问链接
 - 新增协作治理约定：除助手改动外，用户改动也纳入定期 SPEC/CHANGELOG 回写与版本提交
 - 新增统一模型配置中心：src/llm/model_config.py（集中管理 LLM/Embedding/Rerank 模型名与调用）
+- 新增运行时模型观测日志：按调用场景打印真实模型名（intent/rewrite/decompose/grade/generate/embedding/rerank）
 
 ### Planned
 
@@ -38,6 +39,7 @@
 - src/llm/model_config.py 新增文本/多模态模型分层配置，并支持 `RAG_EMBEDDING_MODEL` 与 `RAG_RERANK_MODEL` 覆盖
 - src/llm/model_config.py 调整为“文本向量化固定走 text-embedding，多模态模型仅用于图文向量化”
 - src/llm/model_config.py 将 `normal_chat` 切换为当前账号可用模型 `qwen-turbo`，`stream_chat` 保持 `qwen3-max-2026-01-23`
+- src/llm/provider.py 与核心节点改为场景化获取 LLM，以输出可追踪的模型调用日志
 
 ### Verified
 
@@ -47,6 +49,8 @@
 - uv run python -m pytest -q 通过（9 passed）
 - data/faiss_db 可加载，向量库条目数为 4408
 - 图流程 docs 问答端到端验证通过（可返回有效回答）
+- 在不重建向量库条件下完成简单测试：单次图流程问答成功，并额外完成 rerank API 调用（status=200）
+- 运行日志可见真实模型名打印：`embedding_text=text-embedding-v4`、`rerank=qwen3-rerank`、`intent_router/query_rewrite/query_decompose/doc_grade=qwen-turbo`、`answer_generate/chat_generate=qwen3-max-2026-01-23`
 
 ### Fixed
 
@@ -56,5 +60,4 @@
 
 ### Known Issues
 
-- 索引构建被 API 拒绝：uv run python build.py 在向量化阶段返回 `status_code: 400 / code: Arrearage`
-- 当前 data/faiss_db 未生成，docs 问答主链路尚未完成端到端验收
+- 当前无已知阻塞问题。

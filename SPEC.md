@@ -93,6 +93,7 @@
 - 已支持通过环境变量切换文本/多模态模型：`RAG_EMBEDDING_MODEL`、`RAG_RERANK_MODEL`
 - 文本向量化与多模态向量化已分离：文本构建固定使用 text-embedding，多模态模型仅用于图文场景
 - 已根据当前账号可用性将 normal_chat 调整为可用模型，避免路由/重写/评估节点因模型不可用中断
+- 已增加运行时模型观测：控制台按场景打印真实调用模型名（intent/rewrite/decompose/grade/generate/embedding/rerank）
 
 ## 5. 运行基线（环境约定）
 
@@ -130,6 +131,7 @@
 - 已修复 build.py 中未定义目录变量导致的构建启动失败问题
 - 已完成索引构建并产出 `data/faiss_db`，向量库可正常加载（4408 条）
 - 已完成 docs 问答端到端验证：图流程可返回有效回答
+- 已完成“不重建向量库”的简单运行验证：可直接基于现有 `data/faiss_db` 完成问答与 rerank 调用
 
 结论：首次“跑通整个项目”任务已完成。
 

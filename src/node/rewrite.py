@@ -2,7 +2,7 @@ from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from pydantic import BaseModel, Field
 
-from src.llm.provider import get_normal_llm
+from src.llm.provider import get_normal_llm_for_scene
 from src.prompt.rewrite_prompt import rewrite_system_prompt
 from src.test import timing_decorator
 
@@ -19,7 +19,7 @@ system_prompt = ChatPromptTemplate.from_messages([
     ("user", "【原始查询】：{query} \n\n【重写要求】：请生成一个更有利于检索到技术文档的关键词组合，保持简洁精准。")
 ]).partial(format_instructions=parser.get_format_instructions())
 
-rewrite_chain = system_prompt | get_normal_llm() | parser
+rewrite_chain = system_prompt | get_normal_llm_for_scene("query_rewrite") | parser
 @timing_decorator
 def rewrite_node(state):
     try:
