@@ -4,6 +4,25 @@
 
 ## [Unreleased]
 
+### Changed
+
+- 文档体系重构为 Specscoding 分层：`spec.md`（目标约束）、`plan.md`（整体计划）、`task.md`（任务进度）、`CHANGELOG.md`（变更记录）
+- 规范文档入口统一为 `spec.md`（替代历史 `SPEC.md` 命名）
+- `README.md` 同步文档分层规范，并明确保留 TDD（Red/Green/Refactor）与 `uv run` 命令口径
+- skill 流程规范升级：`autocoder` 与 `sync_doc` 增加 Specscoding 分层门禁、任务跟踪与提交闭环要求
+- `scripts/prepare_eval_dataset.py` 增强 CSV 兼容能力：新增乱码修复与“问题/答案合并列”解析
+- `src/eval/dataset_io.py` 补充中文字段语义说明，便于评测数据结构对齐
+- `src/llm/model_config.py` 新增 `eval_candidate_generate` 模型配置项
+
+### Added
+
+- 新增文档：`spec.md`
+- 新增文档：`plan.md`
+- 新增文档：`task.md`
+- 新增脚本：`scripts/diagnose_docid.py`（用于 docid 一致性诊断）
+- 新增脚本：`scripts/run_eval_wrapped.py`（环境变量预加载的评测入口包装）
+- 新增示例配置：`.env.example`
+
 ### Fixed
 
 - 修复真实用户风格生成脚本的提示词解码约束问题（JSON 花括号转义），避免 ChatPromptTemplate 误解析导致 fallback

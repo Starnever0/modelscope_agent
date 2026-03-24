@@ -20,6 +20,7 @@ MODEL_NAMES = {
     # 文本 RAG 默认模型（build.py 索引构建使用文本切片）
     "embedding_text": "text-embedding-v4",
     "rerank_text": "qwen3-rerank",
+    "eval_candidate_generate": "glm-4.7",
     # 多模态预留模型（仅用于图文向量化，不用于纯文本向量化）
     "embedding_multimodal": "qwen3-vl-embedding",
     "rerank_multimodal": "qwen3-vl-rerank",

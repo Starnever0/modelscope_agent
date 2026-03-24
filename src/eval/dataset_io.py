@@ -1,5 +1,17 @@
 """
-Dataset loading and validation for evaluation cases.
+加载评测案例的工具函数，支持从 JSONL 文件中读取并验证数据格式，确保每个评测案例包含必要的字段和合理的值。
+评测案例的字段包括：
+- case_id: 唯一标识一个评测案例的字符串，必填。
+- query: 评测问题或查询文本，必填。
+- expected_docids: 与 query 相关的文档 ID 列表，用于检索评测，默认为空列表。
+- reference_answer: 可选的参考答案文本，用于生成质量评测。
+- bot_answer: 评测中生成的答案文本，主要用于反馈数据集。
+- user_rating: 用户对 bot_answer 的评分，数值类型，主要用于反馈数据集。
+- user_feedback: 用户对 bot_answer 的文字反馈，主要用于反馈数据集。
+- dataset_type: 数据集类型，区分 "qa" 和 "feedback"，默认为 "qa"。
+- tags: 评测案例的标签列表，默认为空列表。
+- difficulty: 评测案例的难度级别，区分 "easy"、"medium" 和 "hard"，默认为 "easy"。
+- metadata: 评测案例的元数据，用于存储额外的信息。
 """
 import json
 from pathlib import Path

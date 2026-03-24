@@ -2,6 +2,7 @@
 自动生成评测候选集的脚本：
 从 FAISS 向量数据库抽取文档，分批提供文档主题给 LLM 生成“仅问题+docid”的评测样本，
 不生成参考答案以减少模型调用成本。
+当前生成的问题相对偏技术细节，更多样化的场景使用scripts\generate_eval_realistic_qa.py。
 """
 import argparse
 import json
