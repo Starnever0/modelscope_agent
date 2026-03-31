@@ -13,6 +13,7 @@ dependencies = [
     "langchain-community",
     "langchain-core",
     "langchain-chroma",
+    "langchain-tavily",
     "chromadb",
     "dashscope>=1.14.0",
     "jieba",

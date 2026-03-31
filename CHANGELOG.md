@@ -3,7 +3,16 @@
 本项目采用持续更新日志，记录功能变更、问题修复与运行状态变化。
 
 ## [Unreleased]
+### Fixed
 
+- 修复 `src/node/web.py` 中 TavilySearchResults 的弃用告警与字符串处理异常
+  - 问题根因：LangChain 0.3.25+ 弃用 `langchain_community.tools.TavilySearchResults`，新版 `langchain-tavily` 返回 JSON 字符串而非字典列表，导致 `'str' object has no attribute 'get'` 异常
+  - 解决方案：
+    1. 迁移至 `langchain-tavily` 包的 `TavilySearch` 类（新官方实现）
+    2. 新增 `langchain-tavily` 依赖到 pyproject.toml
+    3. 增强 `web_node()` 以处理 JSON 字符串、字典、列表等多种返回格式
+    4. 新增 7 个单元测试（tests/unit/test_web_node.py）覆盖各种格式与边界条件
+  - 影响：消除 LangChainDeprecationWarning，修复 web 搜索节点的运行时异常
 ### Changed
 
 - 文档体系重构为 Specscoding 分层：`spec.md`（目标约束）、`plan.md`（整体计划）、`task.md`（任务进度）、`CHANGELOG.md`（变更记录）
