@@ -121,26 +121,6 @@ def router_node(state):
     1. 将对话历史传递给 LLM 链
     2. LLM 分析用户意图并补全指代
     3. 返回独立查询和路由决策
-    
-    面试要点：
-    Q1: 如何处理对话历史？
-    A: state["messages"] 是 LangChain 的消息列表，格式：
-       [HumanMessage("如何部署Qwen?"), AIMessage("可以通过..."), HumanMessage("它支持多卡吗?")]
-       提示词模板会自动将其格式化为：
-       User: 如何部署Qwen?
-       Assistant: 可以通过...
-       User: 它支持多卡吗?
-       
-    Q2: 为什么需要兜底策略？
-    A: LLM 输出可能格式错误或网络异常，导致解析失败。
-       兜底策略确保系统不会因为 Router 失败而整体挂掉，
-       默认将用户最后一条消息作为查询，路由到 docs 路径。
-       
-    Q3: 如何优化 Router 的准确性？
-    A: ① Prompt Engineering：在系统提示中提供详细的规则和示例
-       ② Few-shot Learning：在提示词中添加典型案例
-       ③ 模型选择：使用指令遵循能力强的模型（如 Qwen2.5）
-       ④ 反馈优化：收集错误案例，持续改进提示词
     """
     print("🤔 正在分析用户意图...")
     try:
@@ -162,6 +142,7 @@ def router_node(state):
         print(f"🚨 路由解析失败: {e}")
         # 【兜底策略】如果解析挂了，默认回退到 docs
         last_msg = state["messages"][-1].content
+        print(f"   └─ ⚠️ 降级到原始查询: {last_msg}")
         return {
             "rewritten_query": last_msg,    # 使用原始查询
             "datasource": "docs"            # 默认路由到技术问答路径

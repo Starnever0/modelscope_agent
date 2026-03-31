@@ -1,9 +1,13 @@
 import os
 from typing import List
 
+from dotenv import load_dotenv
 from dashscope import TextReRank
 from langchain_community.chat_models import ChatTongyi
 from langchain_community.embeddings import DashScopeEmbeddings
+
+# 尽早加载 .env 环境变量（在任何 LLM 初始化前）
+load_dotenv()
 
 
 # 统一模型名称配置：后续替换模型时只改这里
@@ -15,12 +19,12 @@ from langchain_community.embeddings import DashScopeEmbeddings
 # }
 MODEL_NAMES = {
     # 当前账号下 qwen3.5-flash 会触发 InvalidParameter(url)，先使用可用模型保障主链路可运行
-    "normal_chat": "glm-4.7",
+    "normal_chat": "MiniMax-M2.5",
     "stream_chat": "qwen3-max-2026-01-23",
     # 文本 RAG 默认模型（build.py 索引构建使用文本切片）
     "embedding_text": "text-embedding-v4",
     "rerank_text": "qwen3-rerank",
-    "eval_candidate_generate": "glm-4.7",
+    "eval_candidate_generate": "MiniMax-M2.5",
     # 多模态预留模型（仅用于图文向量化，不用于纯文本向量化）
     "embedding_multimodal": "qwen3-vl-embedding",
     "rerank_multimodal": "qwen3-vl-rerank",

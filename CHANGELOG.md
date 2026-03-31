@@ -5,6 +5,15 @@
 ## [Unreleased]
 ### Fixed
 
+- 修复 `src/llm/model_config.py` 中环境变量加载时序问题
+  - 问题根因：部分运行路径下模型初始化早于 `.env` 注入，导致 `DASHSCOPE_API_KEY` 等密钥读取失败
+  - 解决方案：在模型配置模块顶部显式执行 `load_dotenv()`，确保任何 LLM/Embedding/Rerank 初始化前完成环境加载
+  - 影响：降低应用启动与链路初始化阶段的环境变量缺失错误
+
+- 增强 `src/node/router.py` 的兜底可观测性
+  - 在 Router 解析失败降级到 `docs` 路径时，新增原始查询日志输出
+  - 影响：便于定位路由失败场景与复盘输入上下文
+
 - 修复 `src/node/web.py` 中 TavilySearchResults 的弃用告警与字符串处理异常
   - 问题根因：LangChain 0.3.25+ 弃用 `langchain_community.tools.TavilySearchResults`，新版 `langchain-tavily` 返回 JSON 字符串而非字典列表，导致 `'str' object has no attribute 'get'` 异常
   - 解决方案：
@@ -14,6 +23,12 @@
     4. 新增 7 个单元测试（tests/unit/test_web_node.py）覆盖各种格式与边界条件
   - 影响：消除 LangChainDeprecationWarning，修复 web 搜索节点的运行时异常
 ### Changed
+
+- 重构 `app.py` 前端界面为 PC 优先的 chat-first 布局
+  - 调整为单列会话主区域，突出聊天内容显示占比
+  - 将快捷提问、输入框与反馈区收敛到底部 dock，降低视线切换成本
+  - 细化滚动容器控制，缓解多重滚动条与会话区域压缩问题
+  - 更新欢迎语与快捷提问交互链路，统一提交/发送/快捷按钮行为
 
 - 文档体系重构为 Specscoding 分层：`spec.md`（目标约束）、`plan.md`（整体计划）、`task.md`（任务进度）、`CHANGELOG.md`（变更记录）
 - 规范文档入口统一为 `spec.md`（替代历史 `SPEC.md` 命名）
