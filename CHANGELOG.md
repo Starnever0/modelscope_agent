@@ -3,6 +3,55 @@
 本项目采用持续更新日志，记录功能变更、问题修复与运行状态变化。
 
 ## [Unreleased]
+### Added
+
+- 新增图片相对链接绝对化能力（DocData URL 优先，Source URL 回退）
+  - `crawl/crawl.py` 新增 `absolutize_markdown_image_links()` 与 `resolve_image_target_url()`
+  - `fetch_docdata_markdown()` 产出 Markdown 前会将 `![alt](./_resources/...)` 改写为可访问绝对 URL
+  - 影响：后续多模态链路可直接使用图片直链，无需本地下载
+
+- 新增构建侧图片链接兼容改写
+  - `build.py` 新增 `absolutize_markdown_image_links()`，在切分前基于 `DocData URL/Source URL` 进行改写
+  - 影响：历史存量文档在不重跑全量抓取时也可获得图片绝对链接
+
+- 新增单元测试
+  - `tests/unit/test_crawl_image_links.py` 覆盖 DocData 优先、Source 回退与不改写绝对链接场景
+  - `tests/unit/test_build_metadata.py` 补充 `DocData URL` 解析与构建侧图片改写测试
+  - `tests/unit/test_generate_node.py` 覆盖生成链路占位符注入与 `image_registry` 透传
+
+- 新增生成链路多模态占位符注入与映射透传
+  - `src/node/generate.py` 新增图片映射规范化与上下文组装逻辑：为命中文档生成 `[[IMG:docid:idx]]` 占位符并写入 `context`
+  - `src/node/generate.py` 返回新增字段 `image_registry`（placeholder -> image_url），供前端流式替换使用
+  - `src/state/state.py` 扩展 `image_registry` 状态字段
+  - `src/prompt/generator_prompt.py` 增加占位符保真约束，要求保留 `[[IMG:docid:idx]]`
+
+- 新增前端流式占位符替换能力（`[[IMG:docid:idx]]` -> Markdown 图片直链）
+  - `src/placeholder_render.py` 新增占位符渲染与图状态读取工具函数
+  - `app.py` 在 `bot_response` 流式循环中接入 `image_registry` 读取与实时重渲染，支持映射延迟可用时回填替换
+  - 流式结束后增加一次最终刷新，确保尾段占位符完成替换
+  - 异常分支同样走占位符渲染，避免错误提示前残留未替换占位符
+
+- 新增单元测试
+  - `tests/unit/test_placeholder_render.py` 覆盖占位符替换、未知占位符保留、图状态读取成功与异常兜底场景
+
+- 新增图片 caption 并入检索能力（构建阶段）
+  - `build.py` 在切分前解析图片并注入检索文本块：`placeholder + caption`
+  - `build.py` 新增 `docid` 生成、`image_map`/`has_image`/`image_count` metadata 写入
+  - `src/multimodal/caption.py` 新增多模态图片描述生成工具，失败自动回退到 alt 文本描述
+  - `src/llm/model_config.py` 新增 `caption_multimodal` 模型配置项与 `RAG_MULTIMODAL_CAPTION_MODEL` 覆盖能力
+  - `src/llm/provider.py` 新增 `get_multimodal_llm_for_scene()` 供图片描述场景调用
+  - 新增 `BUILD_ENABLE_IMAGE_CAPTION` 开关与 caption 缓存，降低构建耗时与外部依赖波动影响
+
+- 新增统一 caption prompt 管理（中文重写）
+  - 新增 `src/prompt/caption_prompt.py`，集中维护图片 caption 提示词模板
+  - `src/multimodal/caption.py` 改为引用统一 prompt 文件，避免业务逻辑中内联提示词
+  - 提示词重写为“信息抽取优先”的技术文档场景模板，重点覆盖按钮名、字段名、参数名、流程步骤提取
+
+- 新增前端图片可读性与交互优化
+  - `app.py` 将快捷胶囊首项调整为“如何使用Ollama加载ModelScope模型？”
+  - `app.py` 增强聊天图片默认展示尺寸，提升图文答疑可读性
+  - `app.py` 新增图片 Lightbox 预览（点击放大、遮罩点击关闭、ESC 关闭）
+
 ### Fixed
 
 - 修复 `src/llm/model_config.py` 中环境变量加载时序问题

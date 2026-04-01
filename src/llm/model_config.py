@@ -25,6 +25,7 @@ MODEL_NAMES = {
     "embedding_text": "text-embedding-v4",
     "rerank_text": "qwen3-rerank",
     "eval_candidate_generate": "MiniMax-M2.5",
+    "caption_multimodal": "qwen-vl-max-latest",
     # 多模态预留模型（仅用于图文向量化，不用于纯文本向量化）
     "embedding_multimodal": "qwen3-vl-embedding",
     "rerank_multimodal": "qwen3-vl-rerank",
@@ -57,6 +58,17 @@ def get_stream_llm(scene: str = "stream_chat"):
         streaming=True,
     )
     _print_model_usage(scene, getattr(llm, "model_name", MODEL_NAMES["stream_chat"]))
+    return llm
+
+
+def get_multimodal_llm(scene: str = "image_caption"):
+    model_name = os.getenv("RAG_MULTIMODAL_CAPTION_MODEL", MODEL_NAMES["caption_multimodal"])
+    llm = ChatTongyi(
+        model=model_name,
+        extra_body={"enable_thinking": False},
+        temperature=0,
+    )
+    _print_model_usage(scene, getattr(llm, "model_name", model_name))
     return llm
 
 

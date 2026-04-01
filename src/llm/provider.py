@@ -1,4 +1,4 @@
-from src.llm.model_config import get_normal_llm, get_stream_llm
+from src.llm.model_config import get_multimodal_llm, get_normal_llm, get_stream_llm
 
 
 def get_llm(scene: str = "answer_generate"):
@@ -8,3 +8,7 @@ def get_llm(scene: str = "answer_generate"):
 
 def get_normal_llm_for_scene(scene: str):
     return get_normal_llm(scene=scene)
+
+
+def get_multimodal_llm_for_scene(scene: str):
+    return get_multimodal_llm(scene=scene)

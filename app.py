@@ -9,6 +9,7 @@ from langchain_core.messages import AIMessageChunk
 
 from src.feedback.store import save_feedback
 from src.graph import create_graph
+from src.placeholder_render import get_image_registry_from_graph_state, render_image_placeholders
 
 # 在应用启动时加载 .env，便于本地开发通过环境变量配置密钥
 load_dotenv()
@@ -34,10 +35,10 @@ WELCOME_MESSAGE = {
 }
 
 QUICK_PROMPTS = [
-    "我想在本地快速部署 Qwen2.5，给我最短路径步骤",
+    "如何使用Ollama加载ModelScope模型？",
     "新手第一次用魔搭，先做哪三件事最有效？",
-    "帮我对比 API 调用和本地部署的选型",
-    "如何定位模型推理慢的问题？给排查顺序",
+    "Modelscope与百炼大模型平台有什么区别？",
+    "如何部署Qwen3模型，并进行微调？",
 ]
 
 INLINE_FEEDBACK_HTML = (
@@ -57,6 +58,20 @@ INLINE_FEEDBACK_JS = """
     document.addEventListener('click', (event) => {
         const btn = event.target.closest('.inline-feedback-btn');
         if (!btn) {
+            const img = event.target.closest('.chatbot-area img');
+            if (!img) {
+                return;
+            }
+
+            const lightbox = document.getElementById('image_lightbox');
+            const lightboxImg = document.getElementById('image_lightbox_img');
+            if (!lightbox || !lightboxImg) {
+                return;
+            }
+            event.preventDefault();
+            lightboxImg.src = img.src;
+            lightboxImg.alt = img.alt || '预览图片';
+            lightbox.classList.add('show');
             return;
         }
         event.preventDefault();
@@ -67,6 +82,24 @@ INLINE_FEEDBACK_JS = """
             trigger.click();
         }
     });
+
+    const lightbox = document.getElementById('image_lightbox');
+    const closeBtn = document.getElementById('image_lightbox_close');
+    if (lightbox && closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            lightbox.classList.remove('show');
+        });
+        lightbox.addEventListener('click', (event) => {
+            if (event.target === lightbox) {
+                lightbox.classList.remove('show');
+            }
+        });
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape') {
+                lightbox.classList.remove('show');
+            }
+        });
+    }
 }
 """
 
@@ -113,6 +146,8 @@ def bot_response(history: list[dict], session_id: str):
     config = {"configurable": {"thread_id": session_id}}
 
     full_response = ""
+    rendered_response = ""
+    image_registry: dict[str, str] = {}
     try:
         if graph is None:
             raise RuntimeError("Graph 未初始化")
@@ -123,13 +158,26 @@ def bot_response(history: list[dict], session_id: str):
             if isinstance(chunk[0], AIMessageChunk):
                 new_content = chunk[0].content
                 full_response += new_content
-                history[-1]["content"] = full_response
+                latest_registry = get_image_registry_from_graph_state(graph, config)
+                if latest_registry:
+                    image_registry = latest_registry
+                rendered_response = render_image_placeholders(full_response, image_registry)
+                history[-1]["content"] = rendered_response
                 yield history
+
+        # 保险刷新：流式结束后再取一次状态，确保最后一批占位符完成替换。
+        latest_registry = get_image_registry_from_graph_state(graph, config)
+        if latest_registry:
+            image_registry = latest_registry
+        final_rendered = render_image_placeholders(full_response, image_registry)
+        if final_rendered != rendered_response:
+            history[-1]["content"] = final_rendered
+            yield history
 
     except Exception as e:
         logger.error(f"异常: {str(e)}", exc_info=True)
         friendly_error = "😔 服务繁忙，请稍后重试。"
-        history[-1]["content"] = full_response + f"\n\n---\n*{friendly_error}*"
+        history[-1]["content"] = render_image_placeholders(full_response, image_registry) + f"\n\n---\n*{friendly_error}*"
         yield history
 
 
@@ -343,6 +391,56 @@ custom_css = """
     border: 1px solid #dce7f2 !important;
 }
 
+.chatbot-area .message img {
+    max-width: min(680px, 88vw) !important;
+    max-height: 420px !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    border-radius: 12px !important;
+    border: 1px solid #d9e5f1 !important;
+    box-shadow: 0 10px 24px rgba(16, 43, 68, 0.12) !important;
+    margin: 8px 0 !important;
+    cursor: zoom-in !important;
+}
+
+.image-lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 18, 29, 0.86);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 24px;
+}
+
+.image-lightbox.show {
+    display: flex;
+}
+
+.image-lightbox img {
+    max-width: min(1200px, 94vw);
+    max-height: 88vh;
+    border-radius: 14px;
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    object-fit: contain;
+}
+
+.image-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 18px;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid rgba(218, 233, 246, 0.5);
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 22px;
+    cursor: pointer;
+}
+
 .input-area {
     margin-top: 0 !important;
     padding: 0 !important;
@@ -512,6 +610,14 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, js=INLINE_FEEDB
     with gr.Column(elem_classes="main-container"):
         gr.HTML(
             """
+            <div id="image_lightbox" class="image-lightbox" aria-hidden="true">
+                <button id="image_lightbox_close" class="image-lightbox-close" type="button" aria-label="关闭图片预览">×</button>
+                <img id="image_lightbox_img" src="" alt="预览图片" />
+            </div>
+            """
+        )
+        gr.HTML(
+            """
             <div class="top-header">
                 <h2 class="title">魔搭社区答疑助手</h2>
                 <div class="subtitle">社区伙伴模式 | 宽屏沉浸式会话</div>
@@ -538,10 +644,10 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, js=INLINE_FEEDB
 
             with gr.Column(elem_classes="dock-area"):
                 with gr.Row(elem_classes="example-container"):
-                    qp1 = gr.Button("部署最短路径", elem_classes="example-btn", min_width=10)
+                    qp1 = gr.Button("Ollama加载模型", elem_classes="example-btn", min_width=10)
                     qp2 = gr.Button("新手三步", elem_classes="example-btn", min_width=10)
-                    qp3 = gr.Button("方案对比", elem_classes="example-btn", min_width=10)
-                    qp4 = gr.Button("性能排查", elem_classes="example-btn", min_width=10)
+                    qp3 = gr.Button("平台区别", elem_classes="example-btn", min_width=10)
+                    qp4 = gr.Button("部署微调Qwen3", elem_classes="example-btn", min_width=10)
 
                 with gr.Column(elem_classes="input-area"):
                     with gr.Row(elem_classes="custom-input-box"):

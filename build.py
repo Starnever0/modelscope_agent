@@ -4,6 +4,8 @@ import re
 import shutil
 import time
 import traceback
+import hashlib
+from urllib.parse import urljoin
 
 from tqdm import tqdm
 from dotenv import load_dotenv
@@ -12,6 +14,7 @@ from langchain_text_splitters import MarkdownHeaderTextSplitter, RecursiveCharac
 
 from src.embedding.embedding import get_embedding
 from src.build_utils import resolve_target_dirs
+from src.multimodal.caption import generate_image_caption
 
 # 加载 .env，确保构建索引时也能读取 API Key
 load_dotenv()
@@ -29,6 +32,9 @@ CHUNK_OVERLAP = 100
 
 SAFE_CHUNK_SIZE = 1000
 SAFE_BATCH_SIZE = 10
+IMAGE_MD_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+ENABLE_IMAGE_CAPTION = os.getenv("BUILD_ENABLE_IMAGE_CAPTION", "1").lower() not in {"0", "false", "no"}
+_CAPTION_CACHE = {}
 
 
 def parse_metadata(text, filename):
@@ -36,11 +42,82 @@ def parse_metadata(text, filename):
     metadata = {"source_file": filename, "data_type": "doc"}
     url_match = re.search(r"^> Source URL: (.*?)\n", text, re.MULTILINE)
     if url_match: metadata['source_url'] = url_match.group(1).strip()
+    docdata_url_match = re.search(r"^> DocData URL: (.*?)\n", text, re.MULTILINE)
+    if docdata_url_match: metadata['docdata_url'] = docdata_url_match.group(1).strip()
     title_match = re.search(r"^> Title: (.*?)\n", text, re.MULTILINE)
     if title_match: metadata['title'] = title_match.group(1).strip()
     type_match = re.search(r"^> Data Type: (.*?)\n", text, re.MULTILINE)
     if type_match: metadata['data_type'] = type_match.group(1).strip()
     return metadata
+
+
+def absolutize_markdown_image_links(text, docdata_url, source_url):
+    if not text:
+        return text
+
+    pattern = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+
+    def _replace(match):
+        alt = match.group(1)
+        target = match.group(2).strip()
+        if target.startswith(("http://", "https://", "data:")):
+            return match.group(0)
+
+        if docdata_url:
+            resolved = urljoin(docdata_url, target)
+        elif source_url:
+            resolved = urljoin(source_url, target)
+        else:
+            resolved = target
+
+        return f"![{alt}]({resolved})"
+
+    return pattern.sub(_replace, text)
+
+
+def build_docid(meta, filename):
+    source = meta.get("source_url") or meta.get("docdata_url") or filename
+    digest = hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12]
+    return f"doc-{digest}"
+
+
+def enrich_markdown_images(text, docid):
+    image_map = {}
+    if not text:
+        return text, image_map
+
+    image_index = 0
+
+    def _replace(match):
+        nonlocal image_index
+        image_index += 1
+
+        alt = match.group(1)
+        image_url = match.group(2).strip()
+        span_start, span_end = match.span()
+        left_context = text[max(0, span_start - 140):span_start]
+        right_context = text[span_end:span_end + 140]
+        context_text = re.sub(r"\s+", " ", f"{left_context} {right_context}").strip()
+        image_map[str(image_index)] = image_url
+
+        placeholder = f"[[IMG:{docid}:{image_index}]]"
+        cache_key = (image_url, alt, context_text[:120])
+        if cache_key in _CAPTION_CACHE:
+            caption = _CAPTION_CACHE[cache_key]
+        elif ENABLE_IMAGE_CAPTION:
+            caption = generate_image_caption(image_url=image_url, alt_text=alt, context_text=context_text)
+            _CAPTION_CACHE[cache_key] = caption
+        else:
+            caption = f"图片内容与“{alt}”相关。" if alt else "文档配图，建议结合上下文理解。"
+        enrich_block = (
+            f"\n\n[Image idx={image_index}]\n"
+            f"placeholder: {placeholder}\n"
+            f"caption: {caption}\n"
+        )
+        return f"![{alt}]({image_url}){enrich_block}"
+
+    enriched = IMAGE_MD_PATTERN.sub(_replace, text)
+    return enriched, image_map
 
 
 def load_all_docs(directories):
@@ -80,11 +157,23 @@ def load_all_docs(directories):
                 if not text.strip(): continue
 
                 meta = parse_metadata(text, filename)
+                text = absolutize_markdown_image_links(
+                    text,
+                    docdata_url=meta.get("docdata_url", ""),
+                    source_url=meta.get("source_url", ""),
+                )
+                docid = build_docid(meta, filename)
+                text, image_map = enrich_markdown_images(text, docid)
+
                 header_splits = markdown_splitter.split_text(text)
                 final_splits = text_splitter.split_documents(header_splits)
 
                 for doc in final_splits:
                     doc.metadata.update(meta)
+                    doc.metadata["docid"] = docid
+                    doc.metadata["image_map"] = image_map
+                    doc.metadata["has_image"] = bool(image_map)
+                    doc.metadata["image_count"] = len(image_map)
                     source_info = f"来源: {meta.get('title', filename)}"
                     if 'source_url' in meta: source_info += f" ({meta['source_url']})"
 

@@ -239,6 +239,38 @@ def extract_links_from_markdown(base_url: str, markdown_text: str) -> List[str]:
     return deduped
 
 
+def resolve_image_target_url(target: str, docdata_url: str, source_url: str) -> str:
+    target = (target or "").strip()
+    if not target:
+        return target
+
+    if target.startswith(("http://", "https://", "data:")):
+        return target
+
+    if docdata_url:
+        return urljoin(docdata_url, target)
+
+    if source_url:
+        return urljoin(source_url, target)
+
+    return target
+
+
+def absolutize_markdown_image_links(markdown_text: str, docdata_url: str, source_url: str) -> str:
+    if not markdown_text:
+        return markdown_text
+
+    pattern = re.compile(r"!\[([^\]]*)\]\(([^)]+)\)")
+
+    def _replace(match: re.Match) -> str:
+        alt = match.group(1)
+        raw_target = match.group(2).strip()
+        resolved = resolve_image_target_url(raw_target, docdata_url=docdata_url, source_url=source_url)
+        return f"![{alt}]({resolved})"
+
+    return pattern.sub(_replace, markdown_text)
+
+
 def clean_reader_content(content: str) -> str:
     """清洗 reader 返回的整页 markdown，尽量保留文档正文并去掉导航/页脚噪声。"""
     lines = [line.rstrip() for line in content.splitlines()]
@@ -545,6 +577,9 @@ def fetch_docdata_markdown(session: requests.Session, url: str, timeout: int, ve
         content = resp.content.decode("utf-8", errors="replace").strip()
         if not content or len(re.sub(r"\s+", "", content)) < 80:
             continue
+
+        # 图片相对路径统一转为绝对链接：优先 DocData URL，回退 Source URL。
+        content = absolutize_markdown_image_links(content, docdata_url=md_url, source_url=url)
 
         title = "Untitled"
         first_h1 = re.search(r"^#\s+(.+)$", content, flags=re.MULTILINE)

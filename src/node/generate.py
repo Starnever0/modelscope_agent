@@ -1,3 +1,5 @@
+import hashlib
+
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from src.llm.provider import get_llm
@@ -14,8 +16,62 @@ generator_prompt = ChatPromptTemplate.from_messages([("system", generator_system
 
 generate_chain = generator_prompt | get_llm("answer_generate")
 
+
+def _stable_docid(metadata: dict, fallback_index: int) -> str:
+    source = metadata.get("docid") or metadata.get("source_url") or metadata.get("source_file") or f"doc-{fallback_index}"
+    if metadata.get("docid"):
+        return str(metadata["docid"])
+    digest = hashlib.sha1(str(source).encode("utf-8")).hexdigest()[:12]
+    return f"doc-{digest}"
+
+
+def _normalize_image_map(raw_image_map) -> dict[str, str]:
+    if isinstance(raw_image_map, dict):
+        return {str(k): str(v) for k, v in raw_image_map.items() if isinstance(v, str) and v.strip()}
+
+    if isinstance(raw_image_map, list):
+        normalized = {}
+        for item in raw_image_map:
+            if not isinstance(item, dict):
+                continue
+            idx = item.get("idx")
+            url = item.get("url")
+            if idx is None or not isinstance(url, str) or not url.strip():
+                continue
+            normalized[str(idx)] = url
+        return normalized
+
+    return {}
+
+
+def _build_context_and_registry(docs) -> tuple[str, dict[str, str]]:
+    image_registry: dict[str, str] = {}
+    parts: list[str] = []
+
+    for doc_idx, doc in enumerate(docs):
+        metadata = getattr(doc, "metadata", {}) or {}
+        source = metadata.get("url") or metadata.get("source_url") or ""
+        part = f"【来源】{source}\n{doc.page_content}"
+
+        image_map = _normalize_image_map(metadata.get("image_map"))
+        if image_map:
+            docid = _stable_docid(metadata, doc_idx)
+            placeholders = []
+            for idx, img_url in image_map.items():
+                placeholder = f"[[IMG:{docid}:{idx}]]"
+                image_registry[placeholder] = img_url
+                placeholders.append(placeholder)
+
+            placeholders_text = "\n".join(f"- {p}" for p in placeholders)
+            part += f"\n\n【图片占位符】\n{placeholders_text}"
+
+        parts.append(part)
+
+    return "\n\n".join(parts), image_registry
+
 @timing_decorator
 def generate_node(state: RagState):
+    image_registry = {}
     if state.get("web_answer"):
         context = state["web_answer"]
     else:
@@ -24,13 +80,13 @@ def generate_node(state: RagState):
                 state.get("all_retrieved_docs") or
                 state["retrieved_docs"]
         )
-        context = "\n\n".join(f"【来源】{doc.metadata.get('url')}\n{doc.page_content}" for doc in docs)
+        context, image_registry = _build_context_and_registry(docs)
     res = generate_chain.invoke({
         "messages": state["messages"],
         "question": state["messages"][-1].content,
         "context": context
          })
-    return {"messages": [res], "context": context}
+    return {"messages": [res], "context": context, "image_registry": image_registry}
 
 chat_prompt = ChatPromptTemplate.from_messages([
     ("system", """## 角色定位

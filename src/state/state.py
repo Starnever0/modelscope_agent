@@ -14,3 +14,4 @@ class RagState(MessagesState):
     sub_questions: Optional[List[str]]
     all_retrieved_docs: Optional[List[Document]]
     ranked_docs: Optional[List[Document]]
+    image_registry: Optional[dict[str, str]]
