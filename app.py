@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import uuid
 
 import gradio as gr
@@ -39,6 +40,39 @@ QUICK_PROMPTS = [
     "如何定位模型推理慢的问题？给排查顺序",
 ]
 
+INLINE_FEEDBACK_HTML = (
+    "<div class='inline-feedback' data-feedback='actions'>"
+        "<button type='button' class='inline-feedback-btn' data-feedback-type='up'>👍 有帮助</button>"
+        "<button type='button' class='inline-feedback-btn' data-feedback-type='down'>👎 待改进</button>"
+    "</div>"
+)
+
+INLINE_FEEDBACK_JS = """
+() => {
+    if (window.__inlineFeedbackBound) {
+        return;
+    }
+    window.__inlineFeedbackBound = true;
+
+    document.addEventListener('click', (event) => {
+        const btn = event.target.closest('.inline-feedback-btn');
+        if (!btn) {
+            return;
+        }
+        event.preventDefault();
+        const feedbackType = btn.getAttribute('data-feedback-type');
+        const triggerId = feedbackType === 'up' ? 'feedback_up_trigger' : 'feedback_down_trigger';
+        const trigger = document.getElementById(triggerId);
+        if (trigger) {
+            trigger.click();
+        }
+    });
+}
+"""
+
+INLINE_FEEDBACK_PATTERN = re.compile(r"<div class='inline-feedback'.*?</div>", re.S)
+INLINE_FEEDBACK_ACK_PATTERN = re.compile(r"<small class='feedback-indicator'.*?</small>", re.S)
+
 
 def generate_session_id() -> str:
     return str(uuid.uuid4())
@@ -48,7 +82,9 @@ def format_history_for_langchain(gradio_history: list[dict]) -> list[dict]:
     messages = []
     for msg in gradio_history:
         if "<svg" not in msg["content"]:
-            messages.append({"role": msg["role"], "content": msg["content"]})
+            clean_content = INLINE_FEEDBACK_PATTERN.sub("", msg["content"])
+            clean_content = INLINE_FEEDBACK_ACK_PATTERN.sub("", clean_content)
+            messages.append({"role": msg["role"], "content": clean_content})
 
     if len(messages) > 0 and messages[0]["content"] == WELCOME_MESSAGE["content"]:
         return messages[1:]
@@ -112,16 +148,25 @@ def record_feedback(history: list[dict], feedback_type: str):
     if last_assistant_msg["role"] != "assistant" or not last_user_msg:
         return history, "反馈失败：对话格式错误"
 
+    if "feedback-indicator" in last_assistant_msg.get("content", ""):
+        return history, "反馈已记录"
+
     message_id = str(uuid.uuid4())[:8]
     user_input = last_user_msg.get("content", "")
     assistant_response = last_assistant_msg.get("content", "")
+    assistant_response = INLINE_FEEDBACK_PATTERN.sub("", assistant_response)
+    assistant_response = INLINE_FEEDBACK_ACK_PATTERN.sub("", assistant_response)
+    assistant_response = assistant_response.strip()
 
     try:
         save_feedback(message_id, user_input, assistant_response, feedback_type)
 
-        feedback_indicator = "✅ 感谢反馈！" if feedback_type == "up" else "✅ 反馈已记录，我们会改进！"
-        history[-1]["content"] += (
-            f"\n\n<small style='color: #6f8091; margin-top: 8px;'>{feedback_indicator}</small>"
+        feedback_indicator = "✅ 感谢反馈！"
+        content_without_buttons = INLINE_FEEDBACK_PATTERN.sub("", history[-1]["content"])
+        content_without_buttons = INLINE_FEEDBACK_ACK_PATTERN.sub("", content_without_buttons)
+        history[-1]["content"] = (
+            f"{content_without_buttons}\n\n"
+            f"<small class='feedback-indicator' style='color: #6f8091; margin-top: 8px;'>{feedback_indicator}</small>"
         )
 
         return history, f"反馈成功 (ID: {message_id})"
@@ -141,6 +186,21 @@ def toggle_feedback_buttons(show: bool, history: list[dict]):
     has_conversation = len(history) > 1 if history else False
     should_show = show and has_conversation
     return gr.update(visible=should_show), should_show
+
+
+def append_inline_feedback(history: list[dict]):
+    if not history:
+        return history
+
+    if history[-1].get("role") != "assistant":
+        return history
+
+    content = history[-1].get("content", "")
+    if "data-feedback='actions'" in content or "feedback-indicator" in content:
+        return history
+
+    history[-1]["content"] = f"{content}\n\n{INLINE_FEEDBACK_HTML}"
+    return history
 
 
 def quick_send(prompt: str, history: list[dict]):
@@ -164,7 +224,8 @@ custom_css = """
 
 .gradio-container {
     height: 100vh !important;
-    padding: 8px 0 !important;
+    padding: 12px 0 !important;
+    box-sizing: border-box !important;
     overflow: hidden !important;
     background:
         radial-gradient(circle at 8% 10%, rgba(13, 103, 178, 0.06), transparent 34%),
@@ -175,8 +236,8 @@ custom_css = """
 
 .main-container {
     width: min(1360px, 98vw) !important;
-    height: calc(100vh - 18px) !important;
-    margin: 8px auto !important;
+    height: 100% !important;
+    margin: 0 auto !important;
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
@@ -192,7 +253,7 @@ custom_css = """
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
-    padding: 8px 10px 10px 10px !important;
+    padding: 8px 10px 0 10px !important;
     gap: 4px !important;
 }
 
@@ -240,12 +301,12 @@ custom_css = """
 }
 
 .dock-area {
-    flex: 0 0 clamp(112px, 18vh, 156px) !important;
+    flex: 0 0 auto !important;
     display: grid !important;
-    grid-template-rows: auto auto 1fr !important;
+    grid-template-rows: auto auto auto !important;
     gap: 4px !important;
-    align-content: start !important;
-    margin: 0 !important;
+    align-content: end !important;
+    margin: auto 0 0 0 !important;
     padding: 0 !important;
     min-height: 0 !important;
 }
@@ -372,6 +433,27 @@ custom_css = """
     justify-content: center;
 }
 
+.inline-feedback {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.inline-feedback-btn {
+    background: #edf6fe;
+    border: 1px solid #c8dff1;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: #1a4f7d;
+    cursor: pointer;
+}
+
+.inline-feedback-btn:hover {
+    background: #e2f0fd;
+}
+
 .feedback-btn {
     padding: 4px 10px;
     font-size: 12px;
@@ -387,6 +469,10 @@ custom_css = """
     background: #edf6fe;
 }
 
+.feedback-trigger {
+    display: none !important;
+}
+
 .tip-text {
     margin: 0 !important;
     color: #617791 !important;
@@ -396,20 +482,21 @@ custom_css = """
 @media (max-width: 1024px) {
     .main-container {
         width: 98vw !important;
-        height: calc(100vh - 8px) !important;
-        margin: 4px auto !important;
+        height: 100% !important;
+        margin: 0 auto !important;
         border-radius: 14px !important;
     }
 
     .chat-shell {
         display: flex !important;
         flex-direction: column !important;
-        padding: 8px !important;
+        padding: 8px 8px 0 8px !important;
         gap: 4px !important;
     }
 
     .dock-area {
-        flex-basis: clamp(108px, 24vh, 150px) !important;
+        flex-basis: auto !important;
+        align-content: end !important;
     }
 
     .chatbot-area {
@@ -419,9 +506,8 @@ custom_css = """
 """
 
 
-with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes.Soft(), fill_height=True) as demo:
+with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, js=INLINE_FEEDBACK_JS, theme=gr.themes.Soft(), fill_height=True) as demo:
     session_state = gr.State(generate_session_id)
-    button_visibility = gr.State(False)
 
     with gr.Column(elem_classes="main-container"):
         gr.HTML(
@@ -444,14 +530,13 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
                 type="messages",
             )
 
-            with gr.Column(elem_classes="dock-area"):
-                with gr.Row(elem_classes="feedback-area", visible=False) as feedback_row:
-                    feedback_up_btn = gr.Button("👍 有帮助", scale=1, min_width=100, elem_classes="feedback-btn")
-                    feedback_down_btn = gr.Button(
-                        "👎 待改进", scale=1, min_width=100, elem_classes="feedback-btn"
-                    )
-                    feedback_status = gr.Textbox(label="反馈状态", interactive=False, visible=False)
+            feedback_up_trigger = gr.Button("feedback_up", elem_id="feedback_up_trigger", elem_classes="feedback-trigger")
+            feedback_down_trigger = gr.Button(
+                "feedback_down", elem_id="feedback_down_trigger", elem_classes="feedback-trigger"
+            )
+            feedback_status = gr.Textbox(label="反馈状态", interactive=False, visible=False)
 
+            with gr.Column(elem_classes="dock-area"):
                 with gr.Row(elem_classes="example-container"):
                     qp1 = gr.Button("部署最短路径", elem_classes="example-btn", min_width=10)
                     qp2 = gr.Button("新手三步", elem_classes="example-btn", min_width=10)
@@ -481,9 +566,9 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
     submit_btn.click(
@@ -496,9 +581,9 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
     qp1.click(fn=lambda: QUICK_PROMPTS[0], inputs=None, outputs=[msg_input], queue=False).then(
@@ -511,9 +596,9 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
     qp2.click(fn=lambda: QUICK_PROMPTS[1], inputs=None, outputs=[msg_input], queue=False).then(
@@ -526,9 +611,9 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
     qp3.click(fn=lambda: QUICK_PROMPTS[2], inputs=None, outputs=[msg_input], queue=False).then(
@@ -541,9 +626,9 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
     qp4.click(fn=lambda: QUICK_PROMPTS[3], inputs=None, outputs=[msg_input], queue=False).then(
@@ -556,31 +641,23 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=[chatbot, session_state],
         outputs=[chatbot],
     ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(True), chatbot],
-        outputs=[feedback_row, button_visibility],
+        fn=append_inline_feedback,
+        inputs=[chatbot],
+        outputs=[chatbot],
     )
 
-    feedback_up_btn.click(
+    feedback_up_trigger.click(
         fn=record_feedback,
         inputs=[chatbot, gr.State("up")],
         outputs=[chatbot, feedback_status],
         queue=False,
-    ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(False), chatbot],
-        outputs=[feedback_row, button_visibility],
     )
 
-    feedback_down_btn.click(
+    feedback_down_trigger.click(
         fn=record_feedback,
         inputs=[chatbot, gr.State("down")],
         outputs=[chatbot, feedback_status],
         queue=False,
-    ).then(
-        fn=toggle_feedback_buttons,
-        inputs=[gr.State(False), chatbot],
-        outputs=[feedback_row, button_visibility],
     )
 
     clear_btn.click(
@@ -588,14 +665,6 @@ with gr.Blocks(title="魔搭社区答疑助手", css=custom_css, theme=gr.themes
         inputs=None,
         outputs=[chatbot, session_state],
         queue=False,
-    ).then(
-        fn=lambda: gr.update(visible=False),
-        inputs=None,
-        outputs=[feedback_row],
-    ).then(
-        fn=lambda: False,
-        inputs=None,
-        outputs=[button_visibility],
     )
 
 if __name__ == "__main__":
