@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>从提问到答案：ModelScope Agent 互动课程</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400;1,9..40,500&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="styles.css">
+
+  <style>
+    :root {
+      --color-accent:       #2A7B9B;
+      --color-accent-hover: #1F6280;
+      --color-accent-light: #E4F2F7;
+      --color-accent-muted: #5A9DB8;
+    }
+  </style>
+
+  <script src="main.js" defer></script>
+</head>
+<body>
+
+  <nav class="nav" id="nav">
+    <div class="progress-bar" id="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    <div class="nav-inner">
+      <span class="nav-title">从提问到答案：ModelScope Agent 互动课程</span>
+      <div class="nav-dots" id="nav-dots" role="tablist">
+        <button class="nav-dot" data-target="module-1" data-tooltip="入口体验：你问一句后发生了什么" role="tab" aria-label="Module 1: 入口体验"></button>
+        <button class="nav-dot" data-target="module-2" data-tooltip="角色图谱：系统里有哪些关键角色" role="tab" aria-label="Module 2: 角色图谱"></button>
+        <button class="nav-dot" data-target="module-3" data-tooltip="检索引擎：混合检索与并行召回" role="tab" aria-label="Module 3: 检索引擎"></button>
+        <button class="nav-dot" data-target="module-4" data-tooltip="生成引擎：把文档变成可读答案" role="tab" aria-label="Module 4: 生成引擎"></button>
+        <button class="nav-dot" data-target="module-5" data-tooltip="稳定性设计：兜底、重写与容错" role="tab" aria-label="Module 5: 稳定性设计"></button>
+        <button class="nav-dot" data-target="module-6" data-tooltip="实战地图：如何用这些知识指挥 AI" role="tab" aria-label="Module 6: 实战地图"></button>
+      </div>
+    </div>
+  </nav>
+
+  <main id="main">
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">你提一个问题，系统背后做了什么？</h1>
+      <p class="module-subtitle">从一次真实提问出发，追踪这套助手的第一段旅程。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">把它想成一条“快递流水线”</h2>
+        <p>你在页面输入“如何部署 Qwen3 模型”，这句话会先进入 <span class="term" data-definition="入口点是程序最先开始执行的位置，就像商场的正门。你和 AI 说的第一句话，都会先经过这里。">入口点</span>，然后被包装成 <span class="term" data-definition="状态就是程序当前记住的上下文数据，比如用户问题、历史消息、检索结果。">状态</span> 数据，交给图工作流。</p>
+        <p>这里的核心不是“回答问题”，而是“先决定下一步去哪”。这就是 <span class="term" data-definition="RAG 是检索增强生成：先找资料，再让大模型基于资料作答，降低瞎编概率。">RAG</span> 系统的第一原则。</p>
+
+        <div class="flow-animation animate-in" data-steps='[
+          {"highlight":"flow-actor-1","label":"用户在 Gradio 输入问题"},
+          {"highlight":"flow-actor-1","label":"前端把消息提交到 app.py","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"app.py 组织 inputs 和 config"},
+          {"highlight":"flow-actor-2","label":"消息进入 LangGraph 入口 router_node","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"路由结果决定走 chat 还是 docs"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">U</div>
+              <span>用户界面</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">A</div>
+              <span>app.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">G</div>
+              <span>graph.py</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">点击 Next Step 开始</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">代码翻译：消息如何被送进图</h2>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">inputs = {"messages": langchain_messages}</span>
+<span class="code-line">config = {"configurable": {"thread_id": session_id}}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">for</span> chunk <span class="code-keyword">in</span> graph.stream(inputs, config, stream_mode=<span class="code-string">"messages"</span>):</span>
+<span class="code-line">    <span class="code-keyword">if</span> isinstance(chunk[0], AIMessageChunk):</span>
+<span class="code-line">        new_content = chunk[0].content</span>
+<span class="code-line">        full_response += new_content</span>
+<span class="code-line">        history[-1]["content"] = rendered_response</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">把历史消息打包成输入。</p>
+              <p class="tl">给这次会话一个 thread_id，方便记住多轮上下文。</p>
+              <p class="tl">进入流式输出模式，模型一边生成一边吐字。</p>
+              <p class="tl">每拿到一段新文本，就马上追加到完整答案里。</p>
+              <p class="tl">把最新内容实时写回聊天窗口，用户无需等全文结束。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Aha: 先流式，再精修</strong>
+            <p>优秀体验往往不是“最准确”优先，而是“先给反馈，再持续变好”。这能显著降低等待焦虑。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">小测验：如果回答迟迟不出来，你先查哪里？</h2>
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="正确。先看 graph.stream 是否有 chunk 返回，能最快判断是模型慢、路由卡住，还是前端渲染问题。"
+               data-explanation-wrong="再想一步：先找最靠近症状的位置。用户看到的是不出字，所以先看流式循环是否在产出内容。">
+            <h3 class="quiz-question">用户点发送后一直空白，第一步最有价值的排查动作是？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先改提示词，让模型更啰嗦</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先确认 graph.stream 循环是否持续收到 chunk</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先重建 FAISS 索引</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-2" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">02</span>
+      <h1 class="module-title">角色图谱：谁负责什么</h1>
+      <p class="module-subtitle">看懂“演员表”，你就能精准指挥 AI 把逻辑放到正确位置。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像拍电影：导演、分镜、剪辑、旁白</h2>
+        <p><span class="term" data-definition="LangGraph 是一种把 AI 流程画成状态图的框架。你可以定义节点、分支、循环和结束条件。">LangGraph</span> 的每个 <span class="term" data-definition="节点是一个独立处理步骤，比如路由、检索、重写、生成。">节点</span> 都像片场岗位：router 决策、retrieve 找素材、generate 出成片。</p>
+
+        <div class="pattern-cards animate-in">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-1)">
+            <div class="pattern-icon" style="background: var(--color-actor-1)">🧭</div>
+            <h4 class="pattern-title">router_node</h4>
+            <p class="pattern-desc">判断是闲聊还是知识问答，并做指代消歧。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">📚</div>
+            <h4 class="pattern-title">retrieve / parallel_retrieve</h4>
+            <p class="pattern-desc">召回候选资料，复杂问题会并行检索。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">✍️</div>
+            <h4 class="pattern-title">generate_node</h4>
+            <p class="pattern-desc">基于上下文组织最终回答并返回给用户。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">群聊动画：组件之间如何“对话”</h2>
+        <div class="chat-window" id="chat-module2">
+          <div class="chat-messages">
+            <div class="chat-message" data-msg="0" data-sender="actor-a" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-1)">R</div>
+              <div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-1)">router_node</span><p>用户问的是技术问题，走 docs 路径。</p></div>
+            </div>
+            <div class="chat-message" data-msg="1" data-sender="actor-b" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-2)">D</div>
+              <div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-2)">decompose_query_node</span><p>这是复杂问题，我拆成多个子问题。</p></div>
+            </div>
+            <div class="chat-message" data-msg="2" data-sender="actor-c" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-3)">P</div>
+              <div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-3)">parallel_retrieve_node</span><p>我并行抓取资料并去重，稍后交给 rerank。</p></div>
+            </div>
+            <div class="chat-message" data-msg="3" data-sender="actor-d" style="display:none">
+              <div class="chat-avatar" style="background: var(--color-actor-5)">G</div>
+              <div class="chat-bubble"><span class="chat-sender" style="color: var(--color-actor-5)">generate_node</span><p>收到高质量上下文，开始生成最终答案。</p></div>
+            </div>
+          </div>
+          <div class="chat-typing" id="chat-module2-typing" style="display:none">
+            <div class="chat-avatar" id="chat-module2-typing-avatar">?</div>
+            <div class="chat-typing-dots"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+          </div>
+          <div class="chat-controls">
+            <button class="btn chat-next-btn">Next Message</button>
+            <button class="btn chat-all-btn">Play All</button>
+            <button class="btn chat-reset-btn">Replay</button>
+            <span class="chat-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">代码翻译：路由分支是如何声明的</h2>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">workflow.add_conditional_edges(</span>
+<span class="code-line">    "router_node",</span>
+<span class="code-line">    route_after_router,</span>
+<span class="code-line">    {</span>
+<span class="code-line">        "chat_node": "chat_node",</span>
+<span class="code-line">        "decompose_query_node": "decompose_query_node",</span>
+<span class="code-line">    }</span>
+<span class="code-line">)</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">给工作流添加“条件分流”规则。</p>
+              <p class="tl">当前节点是 router_node。</p>
+              <p class="tl">由 route_after_router 函数算出下一跳。</p>
+              <p class="tl">如果结果是 chat_node，就直接走闲聊。</p>
+              <p class="tl">如果结果是 decompose_query_node，就进入知识问答链路。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module2">
+          <div class="quiz-question-block" data-correct="option-c" data-explanation-right="正确。你能把逻辑放在 router，能减少后面节点的复杂度，这是系统设计中的职责边界。" data-explanation-wrong="关键在职责边界：应该在最早可判断的位置做分流，也就是 router。">
+            <h3 class="quiz-question">你想新增“纯闲聊不检索”策略，最该改哪个角色？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>generate_node</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>retrieve_docs_node</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>router_node</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module2')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module2')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">检索引擎：语义 + 关键词双保险</h1>
+      <p class="module-subtitle">看懂混合检索与并行召回，你就能让 AI “找得准、找得快”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像找书：图书馆检索 + 目录检索同时进行</h2>
+        <p><span class="term" data-definition="FAISS 是向量检索库，会把文本转成数字坐标来做相似度搜索。">FAISS</span> 负责“语义相近”匹配，<span class="term" data-definition="BM25 是关键词相关性算法，擅长精确命中关键术语。">BM25</span> 负责“关键词精确”匹配，然后用加权方式合并结果。</p>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🧠</div>
+          <div class="callout-content">
+            <strong class="callout-title">Aha: 混合检索的本质</strong>
+            <p>单一策略总会有盲区。把“语义理解”和“关键词命中”组合，能更稳地覆盖不同提问习惯。</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">return</span> EnsembleRetriever(</span>
+<span class="code-line">    retrievers=[vector_retriever, bm25_retriever],</span>
+<span class="code-line">    weights=[0.5, 0.5]</span>
+<span class="code-line">)</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">返回一个“组合检索器”。</p>
+              <p class="tl">它同时使用向量检索器和 BM25 检索器。</p>
+              <p class="tl">两边权重都是 0.5，表示各占一半影响力。</p>
+              <p class="tl">最后输出融合后的候选文档。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">并行检索：复杂问题拆分后一起查</h2>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">max_workers = min(len(sub_questions), 8)</span>
+<span class="code-line"><span class="code-keyword">with</span> ThreadPoolExecutor(max_workers=max_workers) <span class="code-keyword">as</span> executor:</span>
+<span class="code-line">    docs_batches = executor.map(_retrieve_one, enumerate(sub_questions, 1))</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">最多开 8 个并发工人，防止开太多线程。</p>
+              <p class="tl">在并发池里批量处理每个子问题。</p>
+              <p class="tl">把每个子问题的检索结果收集成批次。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module3">
+          <div class="quiz-question-block" data-correct="option-a" data-explanation-right="正确。复杂问题往往包含多个子意图，并行检索能显著提高覆盖率。" data-explanation-wrong="想想用户问题是不是一条线性需求。如果它其实是多个子问题，就应并行检索再合并。">
+            <h3 class="quiz-question">遇到“部署+微调+评测”这种复合问题，哪种策略更合理？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先分解子问题，再并行检索并去重</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>只做一次 BM25 检索</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>直接让模型自由发挥生成答案</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">生成引擎：资料如何变成最终回答</h1>
+      <p class="module-subtitle">这一步决定了回答是“像人话”还是“像日志”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像写报告：先收证据，再落笔</h2>
+        <p>系统会把检索文档拼成 <span class="term" data-definition="上下文是给模型看的背景材料，模型会基于这些材料组织回答。">context</span>，并处理 <span class="term" data-definition="占位符是临时标记，先放一个符号，稍后再替换成真实内容。">图片占位符</span>，保证图文可以在流式输出中逐步替换完成。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">if state.get("web_answer"):</span>
+<span class="code-line">    context = state["web_answer"]</span>
+<span class="code-line">else:</span>
+<span class="code-line">    docs = (</span>
+<span class="code-line">            state.get("ranked_docs") or</span>
+<span class="code-line">            state.get("all_retrieved_docs") or</span>
+<span class="code-line">            state["retrieved_docs"]</span>
+<span class="code-line">    )</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">如果 web 搜索已经给了答案，就优先使用它。</p>
+              <p class="tl">否则，从三种候选里拿文档：重排后、并行召回后、普通召回后。</p>
+              <p class="tl">这是一种“有就用更优版本，没有就降级”的策略链。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">卡片视图：回答质量取决于三个动作</h2>
+        <div class="pattern-cards animate-in">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">📦</div>
+            <h4 class="pattern-title">选上下文</h4>
+            <p class="pattern-desc">先选最靠谱资料源，避免模型“无米下锅”。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🖼️</div>
+            <h4 class="pattern-title">图文绑定</h4>
+            <p class="pattern-desc">给图片建立 registry，流式过程中安全替换占位符。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🗣️</div>
+            <h4 class="pattern-title">自然语言输出</h4>
+            <p class="pattern-desc">把技术证据翻译成用户可执行建议。</p>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block" data-correct="option-b" data-explanation-right="正确。先保证上下文可信，再谈文风和润色，这才是 RAG 的关键。" data-explanation-wrong="回答风格重要，但第一优先级是材料质量。材料错了，语气再好也会误导。">
+            <h3 class="quiz-question">你要让回答更可靠，优先改哪一层？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先让回答更长、更有文采</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先提升 context 选择与拼接质量</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先改 Gradio 主题色</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">稳定性设计：出错时系统怎么自救</h1>
+      <p class="module-subtitle">真正可用的 AI 产品，不是“不出错”，而是“出错后能优雅恢复”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像导航软件：走错路要自动重规划</h2>
+        <p>router、grade、rewrite 形成了一个有界反馈环：先判读，再检索，不够好就重写一次。配合 <span class="term" data-definition="兜底策略是主流程失败时的备用方案，目的是避免直接报错给用户。">兜底策略</span> 与 <span class="term" data-definition="降级是系统在异常时切换到更简单但更稳的方案，例如默认路由到 docs。">降级</span>，整体体验会稳定很多。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">try</span>:</span>
+<span class="code-line">    analysis = router_chain.invoke({"messages": state["messages"]})</span>
+<span class="code-line">    <span class="code-keyword">return</span> {</span>
+<span class="code-line">        "rewritten_query": analysis.standalone_query,</span>
+<span class="code-line">        "datasource": analysis.datasource</span>
+<span class="code-line">    }</span>
+<span class="code-line"><span class="code-keyword">except</span> Exception <span class="code-keyword">as</span> e:</span>
+<span class="code-line">    last_msg = state["messages"][-1].content</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">先按理想流程走：调用路由链做解析。</p>
+              <p class="tl">如果成功，返回独立查询和数据源选择。</p>
+              <p class="tl">如果失败，不让系统崩掉，而是抓取用户最后一句做保底。</p>
+              <p class="tl">这是典型“先最优，后保活”的工程心法。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning animate-in">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">常见坑</strong>
+            <p>没有兜底时，单点异常会把整条链路拖垮，用户只会看到“服务繁忙”，完全不知道下一步该做什么。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">小测验：你会怎么让系统更抗失败？</h2>
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block" data-correct="option-c" data-explanation-right="正确。有限重试 + 明确降级路径，通常是稳定性和延迟之间最平衡的做法。" data-explanation-wrong="无上限重试会拖慢体验，完全不重试又太脆弱。关键是设上限，并准备可控降级。">
+            <h3 class="quiz-question">文档评分低、检索常失配时，最稳妥的改进方案是？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>无限循环重写直到命中</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>跳过检索，直接让模型回答</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>限制重试次数，并在失败后切换 web 兜底</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+<section class="module" id="module-6" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">实战指挥手册：如何用这些知识驾驭 AI</h1>
+      <p class="module-subtitle">把“看懂代码”转化为“能下高质量指令”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像带团队：你不亲自写，但要会下清晰指令</h2>
+        <p>当你知道 <span class="term" data-definition="线程 ID 用于区分不同会话上下文，避免多个用户的状态串线。">thread_id</span>、路由、检索、重排、生成这些环节，就能把模糊需求改写成精确任务："在 router 加一个 chat 快速通道"，而不是“帮我优化一下”。</p>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item"><code class="badge-code">模块边界</code><span class="badge-desc">告诉 AI 逻辑应该放在哪个文件或节点</span></div>
+          <div class="badge-item"><code class="badge-code">失败路径</code><span class="badge-desc">要求 AI 明确异常分支与降级策略</span></div>
+          <div class="badge-item"><code class="badge-code">验证命令</code><span class="badge-desc">要求 AI 给出可执行验证步骤，而不只说“应该可以”</span></div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">def route_after_decompose(state: RagState) -> str:</span>
+<span class="code-line">    if state["sub_questions"] is not None:</span>
+<span class="code-line">        return "parallel_retrieve_node"</span>
+<span class="code-line">    return "retrieve_docs_node"</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">定义一个“分解之后怎么走”的决策函数。</p>
+              <p class="tl">如果已经拆出子问题，就走并行检索路径。</p>
+              <p class="tl">否则走普通检索路径。</p>
+              <p class="tl">这是把业务复杂度翻译成流程分支的典型写法。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">结课测验：哪条指令最像资深 PM/Tech Lead？</h2>
+        <div class="quiz-container" id="quiz-module6">
+          <div class="quiz-question-block" data-correct="option-b" data-explanation-right="正确。这条指令包含目标、修改位置、边界条件、验收标准，AI 最容易执行到位。" data-explanation-wrong="高质量指令要具体到位置与验收，不是只提感受词，比如“更智能”“更稳定”。">
+            <h3 class="quiz-question">你要减少复杂问题漏召回，哪条指令更可执行？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>优化一下检索，越快越好</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>在 decompose 后增加子问题并行检索，保留去重，并给出 3 条回归用例</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>把回答写得更像人类</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module6')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module6')">Try Again</button>
+        </div>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🚀</div>
+          <div class="callout-content">
+            <strong class="callout-title">毕业目标</strong>
+            <p>你不需要从零写完所有代码，但你已经能判断“该改哪层、为什么改、如何验证是否真的改好了”。这就是 AI 时代最值钱的技术素养。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>
+  </main>
+
+</body>
+</html>

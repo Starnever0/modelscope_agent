@@ -3,6 +3,24 @@
 本项目采用持续更新日志，记录功能变更、问题修复与运行状态变化。
 
 ## [Unreleased]
+### Changed
+
+- 文档教程化重构：README 重写为项目学习入口
+  - 新增“RAG 教程学习路径”（从跑通链路到评测与迭代）
+  - 新增网页学习资源索引与 AI coding 开发流程说明
+  - 新增 commit 追踪使用方式（`git log` 与按文件追踪）
+  - 新增“致谢与参考”章节并引用 ModelScope Studio 原项目链接
+
+- Specscoding 文档同步升级
+  - `spec.md` 增加“教程化目标、学习资产范围、可追溯约束、教程验收”
+  - `plan.md` 增加 Phase C.1（教程化与学习资产）与里程碑/风险同步
+  - `task.md` 新增 T-013（文档教程化重写与提交闭环）并标记完成
+
+### Added
+
+- 新增课程学习产物目录：`course-modelscope-agent/`
+  - 包含 `index.html`、模块化课程页面与静态资源（可直接浏览器打开）
+
 ### Added
 
 - 新增图片相对链接绝对化能力（DocData URL 优先，Source URL 回退）

@@ -1,6 +1,6 @@
 # ModelScope Agent Task（任务规划与进度）
 
-更新时间：2026-04-01
+更新时间：2026-04-02
 
 ## 1. 本轮任务
 
@@ -13,6 +13,7 @@
 7. T-007 修复 LLM 初始化阶段环境变量加载时序
 8. T-008 增强 Router 解析失败可观测性
 9. T-012 多模态图片直链解析与索引接入
+10. T-013 文档教程化重写与提交闭环
 
 ## 2. 进度看板
 
@@ -27,6 +28,7 @@
 | T-007 | 修复环境变量加载时序 | Done | `src/llm/model_config.py` 增加 `load_dotenv()` 早期加载，避免模型初始化阶段读不到密钥 |
 | T-008 | Router 兜底可观测性增强 | Done | `src/node/router.py` 在降级路径打印原始查询，便于线上排障 |
 | T-012 | 多模态图片直链解析与索引接入 | Done | 已完成相对图链绝对化、构建侧兼容改写、图片 caption 并入检索、生成链路 `[[IMG:docid:idx]]` 注入与 `image_registry` 透传；caption prompt 已统一收敛到 `src/prompt/caption_prompt.py`，前端支持图片放大预览与 Ollama 快捷胶囊 |
+| T-013 | 文档教程化重写与提交闭环 | Done | README 重写为学习入口（含学习路径、网页资源、AI coding 流程、commit 追踪）；同步 spec/plan/task/CHANGELOG 并完成提交 |
 
 ## 3. 下一步任务池
 
@@ -37,3 +39,5 @@
 5. T-012.2 在 `app.py` 流式输出阶段实现占位符替换为 Markdown 图片直链。（Done）
 6. T-012.3 统一管理 caption prompt（中文重写，适配技术文档操作截图场景）。（Done）
 7. T-012.4 前端优化图片可读性（默认放大展示 + 点击 Lightbox 预览）并新增 Ollama 快捷胶囊。（Done）
+9. T-014 将课程模块补齐为每模块 3-5 道场景题，并增加调试路径示例。
+10. T-015 为课程产物补充轻量验收检查（导航点、动画、quiz 绑定完整性）。

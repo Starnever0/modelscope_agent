@@ -1,0 +1,68 @@
+<section class="module" id="module-6" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">06</span>
+      <h1 class="module-title">实战指挥手册：如何用这些知识驾驭 AI</h1>
+      <p class="module-subtitle">把“看懂代码”转化为“能下高质量指令”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像带团队：你不亲自写，但要会下清晰指令</h2>
+        <p>当你知道 <span class="term" data-definition="线程 ID 用于区分不同会话上下文，避免多个用户的状态串线。">thread_id</span>、路由、检索、重排、生成这些环节，就能把模糊需求改写成精确任务："在 router 加一个 chat 快速通道"，而不是“帮我优化一下”。</p>
+
+        <div class="badge-list animate-in">
+          <div class="badge-item"><code class="badge-code">模块边界</code><span class="badge-desc">告诉 AI 逻辑应该放在哪个文件或节点</span></div>
+          <div class="badge-item"><code class="badge-code">失败路径</code><span class="badge-desc">要求 AI 明确异常分支与降级策略</span></div>
+          <div class="badge-item"><code class="badge-code">验证命令</code><span class="badge-desc">要求 AI 给出可执行验证步骤，而不只说“应该可以”</span></div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">def route_after_decompose(state: RagState) -> str:</span>
+<span class="code-line">    if state["sub_questions"] is not None:</span>
+<span class="code-line">        return "parallel_retrieve_node"</span>
+<span class="code-line">    return "retrieve_docs_node"</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">定义一个“分解之后怎么走”的决策函数。</p>
+              <p class="tl">如果已经拆出子问题，就走并行检索路径。</p>
+              <p class="tl">否则走普通检索路径。</p>
+              <p class="tl">这是把业务复杂度翻译成流程分支的典型写法。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">结课测验：哪条指令最像资深 PM/Tech Lead？</h2>
+        <div class="quiz-container" id="quiz-module6">
+          <div class="quiz-question-block" data-correct="option-b" data-explanation-right="正确。这条指令包含目标、修改位置、边界条件、验收标准，AI 最容易执行到位。" data-explanation-wrong="高质量指令要具体到位置与验收，不是只提感受词，比如“更智能”“更稳定”。">
+            <h3 class="quiz-question">你要减少复杂问题漏召回，哪条指令更可执行？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>优化一下检索，越快越好</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>在 decompose 后增加子问题并行检索，保留去重，并给出 3 条回归用例</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>把回答写得更像人类</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module6')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module6')">Try Again</button>
+        </div>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">🚀</div>
+          <div class="callout-content">
+            <strong class="callout-title">毕业目标</strong>
+            <p>你不需要从零写完所有代码，但你已经能判断“该改哪层、为什么改、如何验证是否真的改好了”。这就是 AI 时代最值钱的技术素养。</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

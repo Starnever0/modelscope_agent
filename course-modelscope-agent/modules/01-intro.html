@@ -1,0 +1,104 @@
+<section class="module" id="module-1" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">01</span>
+      <h1 class="module-title">你提一个问题，系统背后做了什么？</h1>
+      <p class="module-subtitle">从一次真实提问出发，追踪这套助手的第一段旅程。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">把它想成一条“快递流水线”</h2>
+        <p>你在页面输入“如何部署 Qwen3 模型”，这句话会先进入 <span class="term" data-definition="入口点是程序最先开始执行的位置，就像商场的正门。你和 AI 说的第一句话，都会先经过这里。">入口点</span>，然后被包装成 <span class="term" data-definition="状态就是程序当前记住的上下文数据，比如用户问题、历史消息、检索结果。">状态</span> 数据，交给图工作流。</p>
+        <p>这里的核心不是“回答问题”，而是“先决定下一步去哪”。这就是 <span class="term" data-definition="RAG 是检索增强生成：先找资料，再让大模型基于资料作答，降低瞎编概率。">RAG</span> 系统的第一原则。</p>
+
+        <div class="flow-animation animate-in" data-steps='[
+          {"highlight":"flow-actor-1","label":"用户在 Gradio 输入问题"},
+          {"highlight":"flow-actor-1","label":"前端把消息提交到 app.py","packet":true,"from":"actor-1","to":"actor-2"},
+          {"highlight":"flow-actor-2","label":"app.py 组织 inputs 和 config"},
+          {"highlight":"flow-actor-2","label":"消息进入 LangGraph 入口 router_node","packet":true,"from":"actor-2","to":"actor-3"},
+          {"highlight":"flow-actor-3","label":"路由结果决定走 chat 还是 docs"}
+        ]'>
+          <div class="flow-actors">
+            <div class="flow-actor" id="flow-actor-1">
+              <div class="flow-actor-icon">U</div>
+              <span>用户界面</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-2">
+              <div class="flow-actor-icon">A</div>
+              <span>app.py</span>
+            </div>
+            <div class="flow-actor" id="flow-actor-3">
+              <div class="flow-actor-icon">G</div>
+              <span>graph.py</span>
+            </div>
+          </div>
+          <div class="flow-packet" id="flow-packet"></div>
+          <div class="flow-step-label" id="flow-label">点击 Next Step 开始</div>
+          <div class="flow-controls">
+            <button class="btn flow-next-btn">Next Step</button>
+            <button class="btn flow-reset-btn">Restart</button>
+            <span class="flow-progress"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">代码翻译：消息如何被送进图</h2>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">inputs = {"messages": langchain_messages}</span>
+<span class="code-line">config = {"configurable": {"thread_id": session_id}}</span>
+<span class="code-line"></span>
+<span class="code-line"><span class="code-keyword">for</span> chunk <span class="code-keyword">in</span> graph.stream(inputs, config, stream_mode=<span class="code-string">"messages"</span>):</span>
+<span class="code-line">    <span class="code-keyword">if</span> isinstance(chunk[0], AIMessageChunk):</span>
+<span class="code-line">        new_content = chunk[0].content</span>
+<span class="code-line">        full_response += new_content</span>
+<span class="code-line">        history[-1]["content"] = rendered_response</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">把历史消息打包成输入。</p>
+              <p class="tl">给这次会话一个 thread_id，方便记住多轮上下文。</p>
+              <p class="tl">进入流式输出模式，模型一边生成一边吐字。</p>
+              <p class="tl">每拿到一段新文本，就马上追加到完整答案里。</p>
+              <p class="tl">把最新内容实时写回聊天窗口，用户无需等全文结束。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-accent animate-in">
+          <div class="callout-icon">💡</div>
+          <div class="callout-content">
+            <strong class="callout-title">Aha: 先流式，再精修</strong>
+            <p>优秀体验往往不是“最准确”优先，而是“先给反馈，再持续变好”。这能显著降低等待焦虑。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">小测验：如果回答迟迟不出来，你先查哪里？</h2>
+        <div class="quiz-container" id="quiz-module1">
+          <div class="quiz-question-block"
+               data-correct="option-b"
+               data-explanation-right="正确。先看 graph.stream 是否有 chunk 返回，能最快判断是模型慢、路由卡住，还是前端渲染问题。"
+               data-explanation-wrong="再想一步：先找最靠近症状的位置。用户看到的是不出字，所以先看流式循环是否在产出内容。">
+            <h3 class="quiz-question">用户点发送后一直空白，第一步最有价值的排查动作是？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先改提示词，让模型更啰嗦</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先确认 graph.stream 循环是否持续收到 chunk</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先重建 FAISS 索引</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module1')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module1')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

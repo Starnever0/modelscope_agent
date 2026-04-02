@@ -1,0 +1,66 @@
+<section class="module" id="module-5" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">05</span>
+      <h1 class="module-title">稳定性设计：出错时系统怎么自救</h1>
+      <p class="module-subtitle">真正可用的 AI 产品，不是“不出错”，而是“出错后能优雅恢复”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像导航软件：走错路要自动重规划</h2>
+        <p>router、grade、rewrite 形成了一个有界反馈环：先判读，再检索，不够好就重写一次。配合 <span class="term" data-definition="兜底策略是主流程失败时的备用方案，目的是避免直接报错给用户。">兜底策略</span> 与 <span class="term" data-definition="降级是系统在异常时切换到更简单但更稳的方案，例如默认路由到 docs。">降级</span>，整体体验会稳定很多。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">try</span>:</span>
+<span class="code-line">    analysis = router_chain.invoke({"messages": state["messages"]})</span>
+<span class="code-line">    <span class="code-keyword">return</span> {</span>
+<span class="code-line">        "rewritten_query": analysis.standalone_query,</span>
+<span class="code-line">        "datasource": analysis.datasource</span>
+<span class="code-line">    }</span>
+<span class="code-line"><span class="code-keyword">except</span> Exception <span class="code-keyword">as</span> e:</span>
+<span class="code-line">    last_msg = state["messages"][-1].content</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">先按理想流程走：调用路由链做解析。</p>
+              <p class="tl">如果成功，返回独立查询和数据源选择。</p>
+              <p class="tl">如果失败，不让系统崩掉，而是抓取用户最后一句做保底。</p>
+              <p class="tl">这是典型“先最优，后保活”的工程心法。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout callout-warning animate-in">
+          <div class="callout-icon">⚠️</div>
+          <div class="callout-content">
+            <strong class="callout-title">常见坑</strong>
+            <p>没有兜底时，单点异常会把整条链路拖垮，用户只会看到“服务繁忙”，完全不知道下一步该做什么。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">小测验：你会怎么让系统更抗失败？</h2>
+        <div class="quiz-container" id="quiz-module5">
+          <div class="quiz-question-block" data-correct="option-c" data-explanation-right="正确。有限重试 + 明确降级路径，通常是稳定性和延迟之间最平衡的做法。" data-explanation-wrong="无上限重试会拖慢体验，完全不重试又太脆弱。关键是设上限，并准备可控降级。">
+            <h3 class="quiz-question">文档评分低、检索常失配时，最稳妥的改进方案是？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>无限循环重写直到命中</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>跳过检索，直接让模型回答</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>限制重试次数，并在失败后切换 web 兜底</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module5')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module5')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

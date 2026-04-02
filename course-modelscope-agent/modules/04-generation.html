@@ -1,0 +1,75 @@
+<section class="module" id="module-4" style="background: var(--color-bg)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">04</span>
+      <h1 class="module-title">生成引擎：资料如何变成最终回答</h1>
+      <p class="module-subtitle">这一步决定了回答是“像人话”还是“像日志”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像写报告：先收证据，再落笔</h2>
+        <p>系统会把检索文档拼成 <span class="term" data-definition="上下文是给模型看的背景材料，模型会基于这些材料组织回答。">context</span>，并处理 <span class="term" data-definition="占位符是临时标记，先放一个符号，稍后再替换成真实内容。">图片占位符</span>，保证图文可以在流式输出中逐步替换完成。</p>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">if state.get("web_answer"):</span>
+<span class="code-line">    context = state["web_answer"]</span>
+<span class="code-line">else:</span>
+<span class="code-line">    docs = (</span>
+<span class="code-line">            state.get("ranked_docs") or</span>
+<span class="code-line">            state.get("all_retrieved_docs") or</span>
+<span class="code-line">            state["retrieved_docs"]</span>
+<span class="code-line">    )</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">如果 web 搜索已经给了答案，就优先使用它。</p>
+              <p class="tl">否则，从三种候选里拿文档：重排后、并行召回后、普通召回后。</p>
+              <p class="tl">这是一种“有就用更优版本，没有就降级”的策略链。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">卡片视图：回答质量取决于三个动作</h2>
+        <div class="pattern-cards animate-in">
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-2)">
+            <div class="pattern-icon" style="background: var(--color-actor-2)">📦</div>
+            <h4 class="pattern-title">选上下文</h4>
+            <p class="pattern-desc">先选最靠谱资料源，避免模型“无米下锅”。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-3)">
+            <div class="pattern-icon" style="background: var(--color-actor-3)">🖼️</div>
+            <h4 class="pattern-title">图文绑定</h4>
+            <p class="pattern-desc">给图片建立 registry，流式过程中安全替换占位符。</p>
+          </div>
+          <div class="pattern-card" style="border-top: 3px solid var(--color-actor-5)">
+            <div class="pattern-icon" style="background: var(--color-actor-5)">🗣️</div>
+            <h4 class="pattern-title">自然语言输出</h4>
+            <p class="pattern-desc">把技术证据翻译成用户可执行建议。</p>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module4">
+          <div class="quiz-question-block" data-correct="option-b" data-explanation-right="正确。先保证上下文可信，再谈文风和润色，这才是 RAG 的关键。" data-explanation-wrong="回答风格重要，但第一优先级是材料质量。材料错了，语气再好也会误导。">
+            <h3 class="quiz-question">你要让回答更可靠，优先改哪一层？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先让回答更长、更有文采</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先提升 context 选择与拼接质量</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先改 Gradio 主题色</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module4')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module4')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

@@ -1,0 +1,81 @@
+<section class="module" id="module-3" style="background: var(--color-bg-warm)">
+  <div class="module-content">
+    <header class="module-header animate-in">
+      <span class="module-number">03</span>
+      <h1 class="module-title">检索引擎：语义 + 关键词双保险</h1>
+      <p class="module-subtitle">看懂混合检索与并行召回，你就能让 AI “找得准、找得快”。</p>
+    </header>
+
+    <div class="module-body stagger-children">
+      <section class="screen animate-in">
+        <h2 class="screen-heading">像找书：图书馆检索 + 目录检索同时进行</h2>
+        <p><span class="term" data-definition="FAISS 是向量检索库，会把文本转成数字坐标来做相似度搜索。">FAISS</span> 负责“语义相近”匹配，<span class="term" data-definition="BM25 是关键词相关性算法，擅长精确命中关键术语。">BM25</span> 负责“关键词精确”匹配，然后用加权方式合并结果。</p>
+
+        <div class="callout callout-info animate-in">
+          <div class="callout-icon">🧠</div>
+          <div class="callout-content">
+            <strong class="callout-title">Aha: 混合检索的本质</strong>
+            <p>单一策略总会有盲区。把“语义理解”和“关键词命中”组合，能更稳地覆盖不同提问习惯。</p>
+          </div>
+        </div>
+
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line"><span class="code-keyword">return</span> EnsembleRetriever(</span>
+<span class="code-line">    retrievers=[vector_retriever, bm25_retriever],</span>
+<span class="code-line">    weights=[0.5, 0.5]</span>
+<span class="code-line">)</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">返回一个“组合检索器”。</p>
+              <p class="tl">它同时使用向量检索器和 BM25 检索器。</p>
+              <p class="tl">两边权重都是 0.5，表示各占一半影响力。</p>
+              <p class="tl">最后输出融合后的候选文档。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="screen animate-in">
+        <h2 class="screen-heading">并行检索：复杂问题拆分后一起查</h2>
+        <div class="translation-block animate-in">
+          <div class="translation-code">
+            <span class="translation-label">CODE</span>
+            <pre><code>
+<span class="code-line">max_workers = min(len(sub_questions), 8)</span>
+<span class="code-line"><span class="code-keyword">with</span> ThreadPoolExecutor(max_workers=max_workers) <span class="code-keyword">as</span> executor:</span>
+<span class="code-line">    docs_batches = executor.map(_retrieve_one, enumerate(sub_questions, 1))</span>
+            </code></pre>
+          </div>
+          <div class="translation-english">
+            <span class="translation-label">PLAIN ENGLISH</span>
+            <div class="translation-lines">
+              <p class="tl">最多开 8 个并发工人，防止开太多线程。</p>
+              <p class="tl">在并发池里批量处理每个子问题。</p>
+              <p class="tl">把每个子问题的检索结果收集成批次。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="quiz-container" id="quiz-module3">
+          <div class="quiz-question-block" data-correct="option-a" data-explanation-right="正确。复杂问题往往包含多个子意图，并行检索能显著提高覆盖率。" data-explanation-wrong="想想用户问题是不是一条线性需求。如果它其实是多个子问题，就应并行检索再合并。">
+            <h3 class="quiz-question">遇到“部署+微调+评测”这种复合问题，哪种策略更合理？</h3>
+            <div class="quiz-options">
+              <button class="quiz-option" data-value="option-a" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>先分解子问题，再并行检索并去重</span></button>
+              <button class="quiz-option" data-value="option-b" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>只做一次 BM25 检索</span></button>
+              <button class="quiz-option" data-value="option-c" onclick="selectOption(this)"><div class="quiz-option-radio"></div><span>直接让模型自由发挥生成答案</span></button>
+            </div>
+            <div class="quiz-feedback"></div>
+          </div>
+          <button class="quiz-check-btn" onclick="checkQuiz('quiz-module3')">Check Answers</button>
+          <button class="quiz-reset-btn" onclick="resetQuiz('quiz-module3')">Try Again</button>
+        </div>
+      </section>
+    </div>
+  </div>
+</section>

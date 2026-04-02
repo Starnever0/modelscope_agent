@@ -1,64 +1,77 @@
 # ModelScope Agent
 
-基于 LangGraph 的智能问答代理系统，集成了检索增强生成（RAG）、文档评分、查询重写等多种功能。
+一个面向 ModelScope 场景的 RAG Agent 项目。
+
+它既是可运行的社区答疑系统，也是可复用的 RAG 教程工程：你可以从抓取、索引、检索、生成、评测到反馈闭环，完整学习一套可落地的 AI 应用开发路径。
+
+## 这个项目能做什么
+
+1. 社区问答：基于 LangGraph 路由，区分闲聊与文档问答。
+2. 混合检索：FAISS 向量检索 + BM25 关键词检索，支持并行召回。
+3. 质量增强：查询重写、文档评分、重排序与兜底搜索。
+4. 多模态扩展：文档图片链接、caption 注入与占位符渲染。
+5. 评测闭环：检索指标、时延指标、LLM-as-judge + LangSmith 上传。
+
+## 为什么它适合做 RAG 教程
+
+1. 全链路完整：不是孤立 demo，而是从数据到线上问答的完整工程。
+2. 文档分层清晰：目标、计划、任务、变更日志都有明确边界。
+3. 可追踪演进：可通过 commit 历史与 CHANGELOG 回放每次设计决策。
+4. 命令统一：统一 `uv run ...`，降低环境偏差与复现实验成本。
+
+## 学习路径（建议按顺序）
+
+### 路径 1：先跑起来（30-60 分钟）
+
+1. 安装依赖并配置 `.env`。
+2. 启动应用并完成 1 次 docs 问答。
+3. 观察日志中的模型路由、检索与生成输出。
+
+### 路径 2：理解数据与索引（1-2 小时）
+
+1. 阅读 `crawl/README.md` 与 `crawl/crawl.py`，理解抓取策略。
+2. 执行抓取并查看 `data/raw/` 与 `data/crawl_state.json`。
+3. 执行 `build.py`，理解切分、embedding 与向量索引构建流程。
+
+### 路径 3：理解 RAG 核心链路（2-4 小时）
+
+1. 从 `src/graph.py` 看整体状态机与分支。
+2. 重点阅读 `src/node/router.py`、`src/node/retriever.py`、`src/node/parallel_retrieve.py`、`src/node/generate.py`。
+3. 对照 `src/graph_routes.py` 理解条件边决策。
+
+### 路径 4：学会评测（1-2 小时）
+
+1. 阅读 `EVAL_LANGSMITH_GUIDE.md`。
+2. 跑通 `scripts/run_eval.py`，理解检索/时延/生成质量指标。
+3. 尝试构建自己的评测集并上传 LangSmith。
+
+### 路径 5：按 AI Coding 流程迭代（持续）
+
+1. 在 `spec.md` 明确目标和约束。
+2. 在 `plan.md` 制定阶段策略与里程碑。
+3. 在 `task.md` 拆分任务并更新状态。
+4. 代码与文档同步更新后，回写 `CHANGELOG.md`。
+5. 通过 commit 记录形成可追溯迭代链路。
 
 ## 文档治理（Specscoding）
 
-本项目采用分层文档治理，请按职责阅读与维护：
+请按下面顺序阅读与维护：
 
-- `spec.md`：目标、需求范围、约束、验收标准
-- `plan.md`：整体计划、阶段策略、里程碑
-- `task.md`：任务分解与进度状态
-- `CHANGELOG.md`：变更记录与追溯
-
-## 功能特点
-
-- 🤖 智能路由：自动判断问题类型，选择最优处理路径
-- 📚 文档检索：支持向量数据库检索和 Web 搜索
-- 🔄 查询重写：优化搜索查询以提高检索效果
-- ⚡ 并行处理：支持多路径并行检索
-- 📊 文档评分：智能评估文档相关性
-- 🎯 重排序：对检索结果进行重新排序
-
-## 开发范式（TDD）
-
-默认采用 TDD 三阶段：
-
-1. Red：先写失败测试，先定义行为。
-2. Green：实现最小代码使测试通过。
-3. Refactor：在测试通过前提下重构。
-
-命令执行口径统一为 `uv run ...`。
-
-## 项目结构
-
-```
-modelscope_agent/
-├── app.py              # 主应用入口
-├── build.py            # 构建脚本
-├── requirements.txt    # 依赖包列表
-├── data/              # 数据文件
-│   └── faiss_db/      # FAISS 向量数据库
-├── src/
-│   ├── graph.py       # LangGraph 工作流定义
-│   ├── embedding/     # 向量嵌入模块
-│   ├── llm/          # 大语言模型接口
-│   ├── node/         # 图节点实现
-│   ├── prompt/       # 提示词模板
-│   └── state/        # 状态管理
-└── feedback_data/    # 用户反馈数据
-```
+1. `spec.md`：目标、范围、约束、验收。
+2. `plan.md`：阶段计划、策略、里程碑、风险。
+3. `task.md`：任务拆解、状态、下一步。
+4. `CHANGELOG.md`：变更记录与验证证据。
 
 ## 快速开始
 
-### 克隆项目
+### 1) 获取代码
 
 ```bash
 git clone https://www.modelscope.cn/studios/kirito1223/modelscope_agent.git
 cd modelscope_agent
 ```
 
-### 使用 uv 管理环境（推荐）
+### 2) 安装与环境
 
 ```bash
 # 安装 uv（任选其一）
@@ -66,157 +79,99 @@ pip install uv
 # 或
 pipx install uv
 
-# 创建并激活虚拟环境
-uv venv
-# Windows PowerShell
-.venv\Scripts\Activate.ps1
-# macOS/Linux
-# source .venv/bin/activate
-
 # 安装依赖
 uv pip install -r requirements.txt
 ```
 
-### 使用 pip（兼容方式）
+### 3) 配置 `.env`
 
 ```bash
-pip install -r requirements.txt
-```
-
-### 运行应用
-
-```bash
-uv run python app.py
-```
-
-## 数据抓取与持续更新
-
-项目提供 `crawl.py`，用于抓取并持续更新以下来源并保存为 Markdown：
-
-- 文档中心：https://www.modelscope.cn/docs/overview
-- 研习社：https://modelscope.cn/learn
-- GitHub 组织技术文档：https://github.com/modelscope
-- 模型库：https://modelscope.cn/models
-- 数据集：https://modelscope.cn/datasets
-- 创空间应用：https://modelscope.cn/studios
-- MCP：https://www.modelscope.cn/mcp
-- AIGC 生图和训练：https://www.modelscope.cn/aigc
-
-### 单次抓取
-
-```bash
-uv run python crawl.py
-```
-
-对于 `docs` 来源，爬虫会优先尝试官方 docdata Markdown 源（例如 `.../dist/models/upload/upload_CN.md`），抓取不到时再回退到网页渲染抓取。
-如果 docdata 发布了新版本目录，可在 `.env` 中设置：
-
-```bash
-MODELSCOPE_DOCS_DOCDATA_VERSION=2026-3-17_11-15-CN
-```
-
-默认输出目录和状态文件：
-
-- Markdown：`data/raw/`
-- 增量状态：`data/crawl_state.json`
-
-### 持续更新
-
-```bash
-# 每 3 小时更新一轮
-uv run python crawl.py --loop --interval-minutes 180
-```
-
-### 重新构建向量索引
-
-```bash
-uv run python build.py
-```
-
-`build.py` 已支持递归读取目录，`data/raw` 下的分目录 Markdown 会自动入库。
-
-## 环境变量配置
-
-创建 `.env` 文件并配置以下变量：
-
-```bash
-# 必填：阿里云 DashScope API Key（LLM + rerank）
+# 必填：阿里云 DashScope API Key
 DASHSCOPE_API_KEY=your_dashscope_api_key
 
 # 可选：联网搜索
 TAVILY_API_KEY=your_tavily_api_key
 ```
 
-项目启动时会自动加载 `.env`。
-
-## 模型统一配置
-
-项目已将 LLM、Embedding、Rerank 的模型名称统一到一个文件：
-
-- `src/llm/model_config.py`
-
-如需更换模型，仅需修改该文件中的 `MODEL_NAMES`：
-
-- `normal_chat`：路由/重写/打分等非流式调用
-- `stream_chat`：最终回答与闲聊流式输出
-- `embedding_text`：文本向量化模型（build.py 与文本检索）
-- `rerank_text`：文本重排序模型
-- `embedding_multimodal`：多模态向量化预留模型
-- `rerank_multimodal`：多模态重排序预留模型
-
-### 运行时模型打印
-
-每次运行会在控制台打印真实调用的模型名称（不是配置项 key），便于排查链路问题。当前包含：
-
-- `intent_router`：意图识别模型
-- `query_rewrite`：重写模型
-- `query_decompose`：查询分解模型
-- `doc_grade`：文档打分模型
-- `answer_generate` / `chat_generate`：生成模型
-- `embedding_text`：文本向量化模型
-- `rerank`：重排序模型
-
-## LangSmith 评测
-
-项目新增了模块化评测能力，覆盖三类核心指标：
-
-- 检索质量：`Hit@k`、`Recall@k`、`MRR@k`
-- 响应速度：`TTFT`、`Total Latency`、`Chars/sec`
-- LLM-as-judge：`relevance`、`groundedness`、`completeness`
-
-### 测试集路径与格式
-
-- 测试集目录：`data/eval/datasets/`
-- 示例文件：`data/eval/datasets/sample_rag_eval.jsonl`
-- 报告输出：`data/eval/reports/`
-
-每行一个 JSON 样本，必填字段：
-
-1. `case_id`
-2. `query`
-3. `expected_docids`（非空列表）
-4. `difficulty`（`easy|medium|hard`）
-
-### 运行评测
+### 4) 运行应用
 
 ```bash
+uv run python app.py
+```
+
+### 5) 常用命令
+
+```bash
+# 单次抓取
+uv run python crawl.py
+
+# 循环抓取（每 3 小时）
+uv run python crawl.py --loop --interval-minutes 180
+
+# 重建向量索引
+uv run python build.py
+
+# 运行评测
 uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10
 ```
 
-### 上传 LangSmith
+## 项目结构（学习视角）
 
-```bash
-LANGCHAIN_API_KEY=your_key
-LANGCHAIN_TRACING_V2=true
-LANGCHAIN_PROJECT=modelscope-rag-eval
-
-uv run python scripts/run_eval.py \
-	--dataset data/eval/datasets/sample_rag_eval.jsonl \
-	--upload-langsmith \
-	--dataset-name modelscope_rag_eval
+```text
+app.py                         # Gradio 入口与流式响应
+build.py                       # Markdown -> chunk -> embedding -> FAISS
+crawl/                         # 数据抓取与链接治理
+src/graph.py                   # LangGraph 工作流编排
+src/graph_routes.py            # 路由条件函数
+src/node/                      # 核心节点（router/retrieve/rewrite/rerank/generate/...）
+src/eval/                      # 评测模块
+src/llm/model_config.py        # 模型统一配置
+data/eval/datasets/            # 评测数据
+scripts/                       # 数据与评测脚本
+tests/unit/                    # 单元测试
 ```
 
-更完整的数据集构建与 docid 标注说明见：`EVAL_LANGSMITH_GUIDE.md`
+## 网页学习资源
+
+1. ModelScope 文档中心：https://www.modelscope.cn/docs/overview
+2. ModelScope 研习社：https://modelscope.cn/learn
+3. ModelScope GitHub 组织：https://github.com/modelscope
+4. 本项目评测指南：`EVAL_LANGSMITH_GUIDE.md`
+5. 本项目课程产物：`course-modelscope-agent/index.html`
+
+## 如何追踪演进与决策
+
+1. 看变更日志：`CHANGELOG.md`
+2. 看任务状态：`task.md`
+3. 看提交历史：
+
+```bash
+git log --oneline --decorate --graph -n 30
+```
+
+4. 查看某个模块历史：
+
+```bash
+git log --oneline -- src/node/retriever.py
+```
+
+## 模型配置说明
+
+模型名称统一在 `src/llm/model_config.py` 维护。常用场景包括：
+
+1. `intent_router`：路由决策。
+2. `query_rewrite` / `query_decompose`：重写与分解。
+3. `doc_grade` / `rerank`：检索质量增强。
+4. `answer_generate` / `chat_generate`：最终回答。
+5. `embedding_text`：向量化。
+
+## 致谢与参考
+
+本项目参考并继承了 ModelScope Studio 社区实践，原始工程地址如下：
+
+https://www.modelscope.cn/studios/kirito1223/modelscope_agent.git
+
+感谢社区贡献者持续公开迭代思路、提交记录与实践经验，为 RAG 工程学习提供了高质量样本。
 
 ## 许可证
 
