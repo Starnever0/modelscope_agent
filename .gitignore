@@ -23,7 +23,11 @@ share/python-wheels/
 *.egg
 MANIFEST
 
+# Pytest
+.pytest_cache/
+
 # Virtual Environment
+.venv/
 venv/
 env/
 ENV/
@@ -42,3 +46,19 @@ venv.bak/
 
 # Data
 data/
+feedback_data/
+
+# Runtime artifacts
+*.log
+*.tmp
+
+# Local graph/image exports (generated during debug/visualization)
+my_graph.png
+src/graph.png
+预览图.png
+
+# Ai coding
+.github/
+.agent/
+.claude/
+

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 from typing import List
 from langchain_core.documents import Document
 from src.node.retriever import get_cached_retriever
@@ -32,11 +33,17 @@ def parallel_retrieve_node(state: RagState):
     # 获取缓存的检索器实例（避免重复加载向量库）
     retriever = get_cached_retriever("data/faiss_db")
 
-    # 遍历每个子查询进行检索
-    for i, sq in enumerate(sub_questions, 1):
+    def _retrieve_one(indexed_question: tuple[int, str]) -> List[Document]:
+        i, sq = indexed_question
         print(f"   检索子查询 {i}: {sq}")
-        docs = retriever.invoke(sq)
-        
+        return retriever.invoke(sq)
+
+    max_workers = min(len(sub_questions), 8)
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        docs_batches = executor.map(_retrieve_one, enumerate(sub_questions, 1))
+
+    # 合并并去重所有子查询的检索结果
+    for docs in docs_batches:
         # 对检索到的文档进行去重处理
         for doc in docs:
             content_key = doc.page_content.strip()
