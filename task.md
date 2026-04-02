@@ -15,6 +15,7 @@
 9. T-012 多模态图片直链解析与索引接入
 10. T-013 文档教程化重写与提交闭环
 11. T-016 LangSmith tracing 与 evaluate 接入及评测文档同步
+12. T-018 优化 grade 节点性能，降低文档评分延迟
 
 ## 2. 进度看板
 
@@ -31,6 +32,7 @@
 | T-012 | 多模态图片直链解析与索引接入 | Done | 已完成相对图链绝对化、构建侧兼容改写、图片 caption 并入检索、生成链路 `[[IMG:docid:idx]]` 注入与 `image_registry` 透传；caption prompt 已统一收敛到 `src/prompt/caption_prompt.py`，前端支持图片放大预览与 Ollama 快捷胶囊 |
 | T-013 | 文档教程化重写与提交闭环 | Done | README 重写为学习入口（含学习路径、网页资源、AI coding 流程、commit 追踪）；同步 spec/plan/task/CHANGELOG 并完成提交 |
 | T-016 | LangSmith tracing/evaluate 接入与文档同步 | Done | `run_eval.py` 新增 tracing/evaluate 参数；`src/eval/langsmith_sync.py` 增加 tracing 配置、样本去重上传与 evaluate API 调用；同步 README 与 `EVAL_LANGSMITH_GUIDE.md` 使用说明 |
+| T-018 | 优化 `grade_node` 性能与延迟 | Done | 增加空文档短路逻辑（直接跳转重写或 web 分支），并针对 LLM 输入增加文档截断与 Top-N 限制，大幅降低 prompt token 量与请求耗时，新增相关单元测试 |
 
 ## 3. 下一步任务池
 
@@ -44,3 +46,4 @@
 9. T-014 将课程模块补齐为每模块 3-5 道场景题，并增加调试路径示例。
 10. T-015 为课程产物补充轻量验收检查（导航点、动画、quiz 绑定完整性）。
 11. T-017 为 `run_eval.py` 增加参数级单元测试（CLI 选项组合与错误分支）。
+12. T-018.1 探索轻量规则预判 + LLM 兜底的二期优化（如果后续线上性能依然不及预期时回归）。

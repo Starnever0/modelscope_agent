@@ -5,6 +5,11 @@
 ## [Unreleased]
 ### Changed
 
+- 优化 `grade_doc` 节点判定性能，降低请求延迟
+  - 新增空检索结果短路逻辑：当未检索到文档时直接跳过 LLM 评分，进入 `rewrite_node` 或 `web_node`。
+  - 新增文本截断策略：`_build_grade_documents_text` 限制只输入前 3 篇文档，且每篇保留最多 1200 字符。
+  - 影响：大幅减少传递给 LLM 的上下文 Token，修复了原本因输入过大导致 7-8 秒级响应的高延迟问题。
+
 - 评测链路新增 LangSmith tracing 与 evaluate 能力
   - `scripts/run_eval.py` 新增参数：`--langsmith-tracing`、`--langsmith-project`、`--langsmith-evaluate`、`--langsmith-experiment-prefix`、`--langsmith-max-concurrency`
   - 评测流式生成在 tracing 开启时附带 tags/metadata（含 case_id）
@@ -29,6 +34,10 @@
   - `task.md` 新增 T-013（文档教程化重写与提交闭环）并标记完成
 
 ### Added
+
+- 新增单元测试 `tests/unit/test_grade_doc_node.py`
+  - 覆盖 `test_grade_node_skips_llm_when_no_docs_and_first_try` 空文档短路逻辑。
+  - 覆盖 `test_grade_node_sends_compact_document_text_to_chain` 文档内容截断与压缩传输逻辑。
 
 - 新增课程学习产物目录：`course-modelscope-agent/`
   - 包含 `index.html`、模块化课程页面与静态资源（可直接浏览器打开）
