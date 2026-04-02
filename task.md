@@ -16,6 +16,7 @@
 10. T-013 文档教程化重写与提交闭环
 11. T-016 LangSmith tracing 与 evaluate 接入及评测文档同步
 12. T-018 优化 grade 节点性能，降低文档评分延迟
+13. T-019 简单问题检索限流与数量观测日志
 
 ## 2. 进度看板
 
@@ -33,6 +34,7 @@
 | T-013 | 文档教程化重写与提交闭环 | Done | README 重写为学习入口（含学习路径、网页资源、AI coding 流程、commit 追踪）；同步 spec/plan/task/CHANGELOG 并完成提交 |
 | T-016 | LangSmith tracing/evaluate 接入与文档同步 | Done | `run_eval.py` 新增 tracing/evaluate 参数；`src/eval/langsmith_sync.py` 增加 tracing 配置、样本去重上传与 evaluate API 调用；同步 README 与 `EVAL_LANGSMITH_GUIDE.md` 使用说明 |
 | T-018 | 优化 `grade_node` 性能与延迟 | Done | 增加空文档短路逻辑（直接跳转重写或 web 分支），并针对 LLM 输入增加文档截断与 Top-N 限制，大幅降低 prompt token 量与请求耗时，新增相关单元测试 |
+| T-019 | 简单问题检索限流与数量观测日志 | Done | 在 `src/node/retriever.py` 的 `retrieve_docs_node` 限制仅保留前 5 篇文档下游使用，并新增“命中数量/传入数量”日志；新增 `tests/unit/test_retriever_node.py` 覆盖该行为 |
 
 ## 3. 下一步任务池
 

@@ -5,6 +5,10 @@
 ## [Unreleased]
 ### Changed
 
+- 简单问题检索链路限流与观测增强
+  - `src/node/retriever.py` 在 `retrieve_docs_node` 中将下游使用文档限制为 Top-5，避免简单问题带入过多冗余上下文。
+  - 新增运行日志：打印“简单检索命中数量”与“传入生成数量”，用于线上快速定位召回规模问题。
+
 - 优化 `grade_doc` 节点判定性能，降低请求延迟
   - 新增空检索结果短路逻辑：当未检索到文档时直接跳过 LLM 评分，进入 `rewrite_node` 或 `web_node`。
   - 新增文本截断策略：`_build_grade_documents_text` 限制只输入前 3 篇文档，且每篇保留最多 1200 字符。
@@ -34,6 +38,10 @@
   - `task.md` 新增 T-013（文档教程化重写与提交闭环）并标记完成
 
 ### Added
+
+- 新增单元测试 `tests/unit/test_retriever_node.py`
+  - 覆盖简单问题检索结果 Top-5 限流行为。
+  - 覆盖检索数量日志输出（命中数量与传入数量）。
 
 - 新增单元测试 `tests/unit/test_grade_doc_node.py`
   - 覆盖 `test_grade_node_skips_llm_when_no_docs_and_first_try` 空文档短路逻辑。

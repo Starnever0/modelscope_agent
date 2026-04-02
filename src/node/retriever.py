@@ -17,6 +17,9 @@ from src.embedding.embedding import get_embedding
 from src.state.state import RagState
 from src.test import timing_decorator
 
+
+SIMPLE_QUERY_MAX_DOCS = 5
+
 # ============ 系统初始化 ============
 # 提前初始化 jieba 词典，避免首次调用时的冷启动延迟（约 1-2s）
 print("⚙️ [System Init] Initializing Jieba tokenizer...")
@@ -136,7 +139,12 @@ def retrieve_docs_node(state: RagState):
 
     if doc_retriever:
         doc_docs = doc_retriever.invoke(rewritten_query)
-        docs.extend(doc_docs)
+        retrieved_count = len(doc_docs)
+        docs.extend(doc_docs[:SIMPLE_QUERY_MAX_DOCS])
+        print(
+            f"🔎 简单检索命中 {retrieved_count} 篇，传入生成 {len(docs)} 篇 "
+            f"(limit={SIMPLE_QUERY_MAX_DOCS})"
+        )
 
     return {"retrieved_docs": docs}
 
