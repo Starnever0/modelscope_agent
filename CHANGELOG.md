@@ -5,6 +5,18 @@
 ## [Unreleased]
 ### Changed
 
+- 评测链路新增 LangSmith tracing 与 evaluate 能力
+  - `scripts/run_eval.py` 新增参数：`--langsmith-tracing`、`--langsmith-project`、`--langsmith-evaluate`、`--langsmith-experiment-prefix`、`--langsmith-max-concurrency`
+  - 评测流式生成在 tracing 开启时附带 tags/metadata（含 case_id）
+  - `src/eval/langsmith_sync.py` 增加 tracing 配置与 LangSmith evaluate API 集成
+
+- LangSmith 数据集同步优化为按 `case_id` 去重上传
+  - 避免重复执行上传时持续堆叠相同样本
+
+- 评测文档同步更新
+  - `README.md` 增加 tracing / upload / evaluate 三类命令示例
+  - `EVAL_LANGSMITH_GUIDE.md` 增加 tracing 参数说明、upload 与 evaluate 差异说明、evaluate 内置指标说明
+
 - 文档教程化重构：README 重写为项目学习入口
   - 新增“RAG 教程学习路径”（从跑通链路到评测与迭代）
   - 新增网页学习资源索引与 AI coding 开发流程说明

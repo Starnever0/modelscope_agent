@@ -113,6 +113,15 @@ uv run python build.py
 
 # 运行评测
 uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10
+
+# 启用 LangSmith tracing（仅追踪）
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10 --langsmith-tracing --langsmith-project modelscope-rag
+
+# 上传本地评测摘要到 LangSmith
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --upload-langsmith --dataset-name modelscope_rag_eval
+
+# 运行 LangSmith evaluate 实验（会在平台创建实验）
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --dataset-name modelscope_rag_eval --langsmith-evaluate --langsmith-experiment-prefix modelscope-rag-eval
 ```
 
 ## 项目结构（学习视角）

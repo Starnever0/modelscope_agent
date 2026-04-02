@@ -224,6 +224,15 @@ uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.j
 3. 只要有 query，就可评估速度与 LLM-as-judge
 4. 有 reference_answer 时可计算文本相似度
 
+可选 tracing 参数：
+
+1. `--langsmith-tracing`：在评测运行期间开启 LangSmith tracing。
+2. `--langsmith-project`：指定 tracing 归属项目名（会写入 `LANGCHAIN_PROJECT`）。
+
+示例：
+
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --k 10 --langsmith-tracing --langsmith-project modelscope-rag
+
 ## 6. 上传到 LangSmith
 
 先设置环境变量：
@@ -242,6 +251,20 @@ uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.j
 2. 样本输出：expected_docids/reference_answer/bot_answer/user_rating/user_feedback
 3. 评测摘要：retrieval（可选）/latency/text_similarity/judge/feedback（可选）
 
+补充：`upload` 与 `evaluate` 的区别
+
+1. `--upload-langsmith`：上传样本与本地评测摘要，不会创建 LangSmith 实验评测。
+2. `--langsmith-evaluate`：调用 LangSmith evaluate API，创建实验并执行行级 evaluator。
+
+执行 LangSmith evaluate：
+
+uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.jsonl --dataset-name modelscope_rag_eval --langsmith-evaluate --langsmith-experiment-prefix modelscope-rag-eval --langsmith-max-concurrency 4
+
+evaluate 当前内置两类行级指标：
+
+1. `reference_overlap`：预测答案与 `reference_answer` 的词级重叠率。
+2. `retrieval_hit`：预测 `retrieved_docids` 与 `expected_docids` 是否命中（命中为 1.0，否则 0.0）。
+
 ## 7. 模块结构说明
 
 - src/eval/dataset_io.py：测试集读取与校验
@@ -249,5 +272,5 @@ uv run python scripts/run_eval.py --dataset data/eval/datasets/sample_rag_eval.j
 - src/eval/retrieval_eval.py：召回类指标计算
 - src/eval/latency_eval.py：速度类指标计算
 - src/eval/judge_eval.py：LLM as Judge 评估
-- src/eval/langsmith_sync.py：LangSmith 数据集与结果同步
+- src/eval/langsmith_sync.py：LangSmith tracing 配置、数据集去重上传、evaluate 实验
 - scripts/run_eval.py：评测入口脚本

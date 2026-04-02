@@ -1,9 +1,14 @@
 import argparse
 import json
 import os
+import sys
 import uuid
 from datetime import datetime
 from pathlib import Path
+
+ROOT_DIR = Path(__file__).resolve().parents[1]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
 
 from dotenv import load_dotenv
 from langchain_core.messages import AIMessageChunk
@@ -13,7 +18,12 @@ from src.eval.dataset_io import load_eval_cases_from_jsonl
 from src.eval.docid import build_docid_from_document
 from src.eval.feedback_eval import evaluate_feedback
 from src.eval.judge_eval import build_llm_judge, evaluate_judge
-from src.eval.langsmith_sync import upload_cases_to_langsmith, upload_result_summary
+from src.eval.langsmith_sync import (
+    configure_langsmith_tracing,
+    run_langsmith_evaluation,
+    upload_cases_to_langsmith,
+    upload_result_summary,
+)
 from src.eval.latency_eval import evaluate_latency_for_queries
 from src.eval.retrieval_eval import evaluate_retrieval
 from src.graph import create_graph
@@ -47,10 +57,16 @@ def build_retrieve_docids_fn():
     return retrieve_docids
 
 
-def build_stream_answer_fn(graph):
-    def stream_answer(query: str):
+def build_stream_answer_fn(graph, tracing_enabled: bool, tracing_tags: list[str] | None = None):
+    def stream_answer(query: str, case_id: str | None = None):
         inputs = {"messages": [{"role": "user", "content": query}]}
         config = {"configurable": {"thread_id": f"eval-{uuid.uuid4()}"}}
+        if tracing_enabled:
+            config["tags"] = tracing_tags or ["eval"]
+            config["metadata"] = {
+                "source": "run_eval",
+                **({"case_id": case_id} if case_id else {}),
+            }
         for chunk in graph.stream(inputs, config, stream_mode="messages"):
             if isinstance(chunk[0], AIMessageChunk):
                 content = chunk[0].content
@@ -67,12 +83,26 @@ def collect_answers(cases, stream_answer_fn):
         if case.bot_answer:
             answers[case.case_id] = case.bot_answer
         else:
-            answers[case.case_id] = "".join(stream_answer_fn(case.query))
+            answers[case.case_id] = "".join(stream_answer_fn(case.query, case_id=case.case_id))
     return answers
 
 
 def should_run_retrieval(cases) -> bool:
     return any(bool(c.expected_docids) for c in cases)
+
+
+def build_langsmith_target_fn(stream_answer_fn, retrieve_docids_fn, k: int):
+    def target(inputs: dict):
+        query = str(inputs.get("query") or "")
+        case_id = str(inputs.get("case_id") or "")
+        answer = "".join(stream_answer_fn(query, case_id=case_id))
+        retrieved_docids = retrieve_docids_fn(query, k)
+        return {
+            "answer": answer,
+            "retrieved_docids": retrieved_docids,
+        }
+
+    return target
 
 
 def main():
@@ -82,14 +112,25 @@ def main():
     parser.add_argument("--output-dir", default="data/eval/reports")
     parser.add_argument("--upload-langsmith", action="store_true")
     parser.add_argument("--dataset-name", default="modelscope_rag_eval")
+    parser.add_argument("--langsmith-tracing", action="store_true")
+    parser.add_argument("--langsmith-project", default="")
+    parser.add_argument("--langsmith-evaluate", action="store_true")
+    parser.add_argument("--langsmith-experiment-prefix", default="modelscope-rag-eval")
+    parser.add_argument("--langsmith-max-concurrency", type=int, default=4)
     args = parser.parse_args()
 
     load_dotenv()
 
     cases = load_eval_cases_from_jsonl(args.dataset)
+
+    tracing_enabled = configure_langsmith_tracing(
+        enabled=args.langsmith_tracing or args.upload_langsmith or args.langsmith_evaluate,
+        project=(args.langsmith_project or None),
+    )
+
     graph = create_graph()
     retrieve_docids_fn = build_retrieve_docids_fn()
-    stream_answer_fn = build_stream_answer_fn(graph)
+    stream_answer_fn = build_stream_answer_fn(graph, tracing_enabled=tracing_enabled)
 
     retrieval_result = evaluate_retrieval(cases, retrieve_docids_fn, k=args.k) if should_run_retrieval(cases) else None
     latency_result = evaluate_latency_for_queries([c.query for c in cases], stream_answer_fn)
@@ -142,6 +183,25 @@ def main():
         upload_result_summary(args.dataset_name, "judge", judge_result)
         if feedback_result:
             upload_result_summary(args.dataset_name, "feedback", feedback_result)
+
+    if args.langsmith_evaluate:
+        if not os.getenv("LANGCHAIN_API_KEY"):
+            raise RuntimeError("LANGCHAIN_API_KEY is required when --langsmith-evaluate is enabled")
+
+        upload_cases_to_langsmith(args.dataset_name, cases)
+        target_fn = build_langsmith_target_fn(stream_answer_fn, retrieve_docids_fn, args.k)
+        experiment_name = run_langsmith_evaluation(
+            dataset_name=args.dataset_name,
+            target_fn=target_fn,
+            experiment_prefix=args.langsmith_experiment_prefix,
+            metadata={
+                "source": "run_eval",
+                "dataset": args.dataset,
+                "k": args.k,
+            },
+            max_concurrency=args.langsmith_max_concurrency,
+        )
+        print(f"LangSmith evaluation done. Experiment: {experiment_name}")
 
     print(f"Eval done. Report: {out_file}")
 

@@ -14,6 +14,7 @@
 8. T-008 增强 Router 解析失败可观测性
 9. T-012 多模态图片直链解析与索引接入
 10. T-013 文档教程化重写与提交闭环
+11. T-016 LangSmith tracing 与 evaluate 接入及评测文档同步
 
 ## 2. 进度看板
 
@@ -29,6 +30,7 @@
 | T-008 | Router 兜底可观测性增强 | Done | `src/node/router.py` 在降级路径打印原始查询，便于线上排障 |
 | T-012 | 多模态图片直链解析与索引接入 | Done | 已完成相对图链绝对化、构建侧兼容改写、图片 caption 并入检索、生成链路 `[[IMG:docid:idx]]` 注入与 `image_registry` 透传；caption prompt 已统一收敛到 `src/prompt/caption_prompt.py`，前端支持图片放大预览与 Ollama 快捷胶囊 |
 | T-013 | 文档教程化重写与提交闭环 | Done | README 重写为学习入口（含学习路径、网页资源、AI coding 流程、commit 追踪）；同步 spec/plan/task/CHANGELOG 并完成提交 |
+| T-016 | LangSmith tracing/evaluate 接入与文档同步 | Done | `run_eval.py` 新增 tracing/evaluate 参数；`src/eval/langsmith_sync.py` 增加 tracing 配置、样本去重上传与 evaluate API 调用；同步 README 与 `EVAL_LANGSMITH_GUIDE.md` 使用说明 |
 
 ## 3. 下一步任务池
 
@@ -41,3 +43,4 @@
 7. T-012.4 前端优化图片可读性（默认放大展示 + 点击 Lightbox 预览）并新增 Ollama 快捷胶囊。（Done）
 9. T-014 将课程模块补齐为每模块 3-5 道场景题，并增加调试路径示例。
 10. T-015 为课程产物补充轻量验收检查（导航点、动画、quiz 绑定完整性）。
+11. T-017 为 `run_eval.py` 增加参数级单元测试（CLI 选项组合与错误分支）。
