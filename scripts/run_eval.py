@@ -11,6 +11,8 @@ if str(ROOT_DIR) not in sys.path:
     sys.path.insert(0, str(ROOT_DIR))
 
 from dotenv import load_dotenv
+# 尽早加载 .env，避免后续模块在导入阶段读取不到环境变量
+load_dotenv()
 from langchain_core.messages import AIMessageChunk
 
 from src.eval.answer_eval import evaluate_text_similarity
@@ -118,8 +120,6 @@ def main():
     parser.add_argument("--langsmith-experiment-prefix", default="modelscope-rag-eval")
     parser.add_argument("--langsmith-max-concurrency", type=int, default=4)
     args = parser.parse_args()
-
-    load_dotenv()
 
     cases = load_eval_cases_from_jsonl(args.dataset)
 
